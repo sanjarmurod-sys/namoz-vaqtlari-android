@@ -1,0 +1,36 @@
+name: Extract project source and start APK build
+on:
+  push:
+    paths:
+      - 'namoz-source.zip.b64'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  unpack:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.head_commit.message != 'Extract Namoz Vaqtlari source bundle' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Extract source archive
+        run: |
+          if [ ! -f namoz-source.zip.b64 ]; then
+            echo "Source bundle is already extracted."
+            exit 0
+          fi
+          base64 --decode namoz-source.zip.b64 > /tmp/namoz-source.zip
+          unzip -oq /tmp/namoz-source.zip -d /tmp/namoz-source
+          cp -a /tmp/namoz-source/NamozVaqtlari/. .
+          rm -f namoz-source.zip.b64 /tmp/namoz-source.zip
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Extract Namoz Vaqtlari source bundle"
+          git push
+      - name: Start Android APK workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run build-apk.yml --ref main
