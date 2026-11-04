@@ -572,7 +572,7 @@ function renderTasbih(){
     '<div class="zikr-item '+(i===settings.tasbihIndex?'active':'')+'"><div class="zikr-main" onclick="selectTasbih('+i+')"><strong>'+escapeHtml(z.name)+'</strong><small>'+(i===settings.tasbihIndex?'Hozirgi zikr':'Tanlash uchun bosing')+' · '+z.target+' marta</small></div><span class="zikr-count">'+(i===settings.tasbihIndex?settings.tasbihCount:0)+'/'+z.target+'</span>'+(z.custom?'<button class="btn danger" onclick="removeCustomZikr('+i+')" aria-label="Zikrni o‘chirish">×</button>':'')+'</div>'
   ).join('');
 }
-function incrementTasbih(){const item=currentTasbihItem();if(!item)return;if(settings.tasbihCount<item.target)settings.tasbihCount++;saveSettings();tasbihFeedback();renderTasbih();if(settings.tasbihCount===item.target)showToast(item.name+' — '+item.target+' marta yakunlandi');}
+function incrementTasbih(){const item=currentTasbihItem();if(!item||settings.tasbihCount>=item.target)return;settings.tasbihCount++;saveSettings();tasbihFeedback();renderTasbih();if(settings.tasbihCount===item.target)showToast(item.name+' — '+item.target+' marta yakunlandi');}
 function undoTasbih(){settings.tasbihCount=Math.max(0,settings.tasbihCount-1);saveSettings();renderTasbih();}
 function resetTasbihCount(){settings.tasbihCount=0;saveSettings();renderTasbih();}
 function nextTasbih(){settings.tasbihIndex=(settings.tasbihIndex+1)%settings.tasbihItems.length;settings.tasbihCount=0;saveSettings();renderTasbih();}
