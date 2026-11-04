@@ -1,52 +1,63 @@
-# Namoz Vaqtlari — Baliqchi tumani
+# Namoz Vaqtlari — Android
 
-Ilova namoz vaqtlarini quyidagi ommaviy Telegram kanali e'lon qiladigan haftalik jadvaldan olishi uchun mo‘ljallangan:
+Baliqchi tumani uchun o‘zbek tilidagi namoz vaqtlari, azon eslatmalari, qibla kompassi va tasbeh ilovasi.
 
-- Manba kanal: https://t.me/namozvaqti365
-- Manba hudud: Baliqchi tumani
-- Jadval JSON: https://raw.githubusercontent.com/sanjarmurod-sys/namoz-vaqtlari-android/main/data/prayer-times.json
+## Yuklab olish
 
-## Kanalga admin huquqi kerak emas
+- **Debug APK:** GitHub Actions → [Build Android APK](https://github.com/sanjarmurod-sys/namoz-vaqtlari-android/actions/workflows/build-apk.yml) → eng so‘nggi muvaffaqiyatli run → Artifacts → `Namoz-Vaqtlari-APK`.
+- **Jadval JSON:** https://raw.githubusercontent.com/sanjarmurod-sys/namoz-vaqtlari-android/main/data/prayer-times.json
+- **Telegram ommaviy manba:** https://t.me/namozvaqti365
 
-Kanal foydalanuvchiga tegishli emasligi va u yerga bot administrator sifatida qo‘shilmasligi sababli Telegram Bot API orqali kanal postlarini to‘g‘ridan-to‘g‘ri olish yo‘li ishlatilmaydi.
+## Ilova xususiyatlari
 
-Rejalashtirilgan avtomatik yangilash usuli — Telegram’ning ommaviy web preview sahifasini (https://t.me/s/namozvaqti365) va undagi oxirgi postlarning matn/media havolalarini tekshirish. Jadval rasmi topilsa, OCR orqali besh vaqt ajratiladi, sana oralig‘i tekshiriladi va keyin GitHub’dagi JSON yangilanadi.
+- O‘zbekcha interfeys va Baliqchi tumani uchun boshlang‘ich sozlama.
+- Bomdod, Peshin, Asr, Shom, Xufton va quyosh chiqishi.
+- Hisoblash usulini tanlash, Hanafi/standart Asr sozlamasi, joylashuv va qo‘lda vaqt tuzatish.
+- Har namoz uchun azon yoqish/o‘chirish, audio fayl tanlash va sinovdan o‘tkazish.
+- Qibla kompassi (telefon sensori va joylashuvdan foydalanadi).
+- Tasbeh: Subhanalloh, Alhamdulillah, Allohu Akbar, shaxsiy zikrlar, hisoblagich, tovush va vibratsiya.
+- Namoz jadvalini internet orqali yangilash va mahalliy xotirada saqlash.
 
-Bu faqat Telegram ushbu kanal uchun ommaviy web preview’ni taqdim etsa ishlaydi. Preview vaqtincha ochilmasa, HTML tuzilmasi o‘zgarsa yoki jadval rasmidan sana/vaqt ishonchli ajralmasa, tizim eski jadvalni saqlab qolishi va qo‘lda tekshirishni talab qilishi kerak. Hech qanday kanal adminligi yoki kanal egasining tokeni talab qilinmaydi.
+## Telegram’dan avtomatik jadval yangilanishi
 
-## Dastlabki jadval namunasi
+Kanal sizniki bo‘lishi yoki unga administrator bo‘lishingiz shart emas. Ilova jadvalni Telegram’ning ochiq web-preview sahifasi — `https://t.me/s/namozvaqti365` — orqali tekshiradigan GitHub Actions jarayonidan oladi.
 
-Foydalanuvchi yuborgan 30.10–05.11 afishasidan o‘qilgan qiymatlar:
+- Workflow taxminan har 3 soatda ommaviy kanalni tekshiradi.
+- Jadval rasmi topilsa, OCR orqali sana va namoz vaqtlarini ajratadi.
+- Faqat 7 kunlik sana oralig‘i va 5/6 vaqt to‘g‘ri o‘qilganida JSON yangilanadi.
+- Eskirgan jadval yangiroq jadvalni almashtira olmaydi.
+- Rasm yoki sana noaniq bo‘lsa, avvalgi JSON saqlanadi.
+- Android ilovasi jadvalni ochilganda yangilaydi va WorkManager orqali davriy ravishda tekshiradi.
 
-| Namoz | Vaqt |
-|---|---:|
-| Bomdod | 06:10 |
-| Peshin | 13:00 |
-| Asr | 15:40 |
-| Shom | 17:20 |
-| Xufton | 19:05 |
+**Tasdiqlangan manba posti:** `@namozvaqti365/1063`. Undagi 30.10–05.11 haftalik afishadan o‘qilgan vaqtlar: Bomdod 06:10, Peshin 13:00, Asr 15:40, Shom 17:20, Xufton 19:05.
 
-Haftalik afishada bitta vaqtlar to‘plami ko‘rsatilgani sababli ushbu qiymatlar 7 kunga boshlang‘ich jadval sifatida nusxalangan. Bu har bir sana uchun alohida astronomik hisob-kitob tasdig‘i emas.
+Afishada hafta uchun bitta vaqtlar to‘plami ko‘rsatilgani sababli JSON’da ushbu qiymatlar 7 sanaga yozilgan. Bu har bir kun uchun alohida astronomik jadval ekanini anglatmaydi. Keyingi haftaning afishasi chiqqach, parser yangi sana oralig‘ini olishi kerak.
 
-## Jadval manbasi
+## APK’ni o‘rnatish
 
-data/prayer-times.json ilovaga quyidagi ma'lumotni beradi:
+1. Actions sahifasidan `Namoz-Vaqtlari-APK` artefakt ZIP’ini yuklab oling.
+2. ZIP’ni ochib, `app-debug.apk` faylini Android telefoniga ko‘chiring.
+3. APK’ni oching va Android so‘rasa, ushbu manbadan ilova o‘rnatishga ruxsat bering.
+4. Ilova ichida joylashuv, bildirishnoma va aniq signal ruxsatlarini bering.
 
-- cityId: baliqchi
-- cityName: Baliqchi tumani
-- timezone: Asia/Tashkent
-- days: har bir sana uchun Bomdod, Peshin, Asr, Shom, Xufton
+Bu hozircha **debug APK**. Google Play uchun alohida release imzolash kaliti bilan signed release build kerak bo‘ladi. Agar shaxsiy azon MP3 fayli tanlanmagan bo‘lsa, ilova qurilmaning standart signal ohangidan foydalanishi mumkin; bu standart ohang haqiqiy azon bo‘lishi kafolatlanmaydi.
 
-## Hozirgi holat
+## Loyiha tuzilishi
 
-- [x] Alohida namoz-vaqtlari-android repository ochilgan.
-- [x] Boshlang‘ich haftalik jadval JSON’ga yozilgan.
-- [x] Hudud Andijon deb emas, Baliqchi tumani deb belgilangan.
-- [x] Kanal adminligi talab qilinmaydigan ommaviy web-preview usuli tanlangan.
-- [x] Ommaviy web-preview sahifasini tekshiradigan va jadval rasmini OCR bilan o‘qiydigan Python skripti joylandi (`telegram_sync/public_channel_sync.py`).
-- [x] GitHub Contents API orqali JSON yangilash kodi qo‘shildi; GitHub Actions tokenidan foydalanadi.
-- [x] Sana/vaqt tekshiruvlari, eski jadvalni himoyalash va parser uchun boshlang‘ich testlar qo‘shildi.
-- [ ] Android Kotlin/WebView manba kodini ushbu repository’ga to‘liq joylash.
-- [ ] GitHub Actions orqali APK yig‘ish va natijani tekshirish.
+- `app/` — Kotlin Android ilovasi va HTML/CSS/JS WebView interfeysi.
+- `data/prayer-times.json` — barcha o‘rnatilgan ilovalar uchun markaziy jadval.
+- `telegram_sync/public_channel_sync.py` — ommaviy Telegram preview va OCR parseri.
+- `telegram_sync/tests/` — sana, preview va OCR sinovlari.
+- `.github/workflows/sync-public-telegram.yml` — jadval yangilash workflow’i.
+- `.github/workflows/build-apk.yml` — APK yig‘ish workflow’i.
 
-**Muhim holat:** ommaviy Telegram preview scraperi, OCR parseri, testlar va GitHub Actions workflow joylandi. Workflow GitHub’da sinovdan o‘tkazilmoqda; Telegram preview’ni amalda yuklash muvaffaqiyatli tasdiqlanmaguncha avtomatik yangilanish ishlayapti deb hisoblamang. Android Kotlin/WebView manba fayllari hali ushbu repository’ga to‘liq joylanmagan va APK hali yig‘ilmagan.
+## Joriy tekshiruv holati
+
+- [x] Yangi `namoz-vaqtlari-android` repository yaratildi; oldingi `namoz-app` repository o‘zgartirilmagan.
+- [x] Kotlin/HTML Android ilovasi manbalari joylandi.
+- [x] Ommaviy Telegram kanalidan post #1063 muvaffaqiyatli o‘qildi.
+- [x] OCR parser sinovlari GitHub Actions’da o‘tdi.
+- [x] JSON’da jadval manbasi va post ID saqlandi.
+- [x] Android debug APK GitHub Actions’da muvaffaqiyatli yig‘ildi va artefaktga yuklandi.
+- [ ] Turli Android telefonlarda amaliy sinov va real azon audiosi/aniq signal ruxsatlarini tekshirish.
+
