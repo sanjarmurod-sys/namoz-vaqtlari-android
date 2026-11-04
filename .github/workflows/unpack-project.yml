@@ -2,33 +2,33 @@ name: Extract project source and start APK build
 on:
   push:
     paths:
-      - 'namoz-source.zip.b64'
+      - 'source-parts/**'
+      - 'source-ready.trigger'
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
 jobs:
   unpack:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.head_commit.message != 'Extract Namoz Vaqtlari source bundle' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Extract source archive
+      - name: Join and extract source archive
         run: |
-          if [ ! -f namoz-source.zip.b64 ]; then
-            echo "Source bundle is already extracted."
-            exit 0
-          fi
-          base64 --decode namoz-source.zip.b64 > /tmp/namoz-source.zip
+          mkdir -p /tmp/namoz-source
+          cat source-parts/part-*.b64 > /tmp/namoz-source.zip.b64
+          base64 --decode /tmp/namoz-source.zip.b64 > /tmp/namoz-source.zip
           unzip -oq /tmp/namoz-source.zip -d /tmp/namoz-source
           cp -a /tmp/namoz-source/NamozVaqtlari/. .
-          rm -f namoz-source.zip.b64 /tmp/namoz-source.zip
+          rm -rf source-parts source-ready.trigger /tmp/namoz-source
+          rm -f /tmp/namoz-source.zip /tmp/namoz-source.zip.b64
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Extract Namoz Vaqtlari source bundle"
+          git commit -m "Add Namoz Vaqtlari Android source and Telegram sync"
           git push
       - name: Start Android APK workflow
         env:
