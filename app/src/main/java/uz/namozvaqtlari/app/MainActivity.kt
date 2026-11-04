@@ -3,8 +3,9 @@ package uz.namozvaqtlari.app
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
-import android.media.AudioManager
-import android.media.ToneGenerator
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioTrack
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -366,9 +367,46 @@ class MainActivity : Activity(), SensorEventListener {
         @JavascriptInterface fun tasbihTick() {
             runOnUiThread {
                 try {
-                    val tone = ToneGenerator(AudioManager.STREAM_SYSTEM, 45)
-                    tone.startTone(ToneGenerator.TONE_PROP_BEEP, 45)
-                    Handler(Looper.getMainLooper()).postDelayed({ tone.release() }, 70)
+                    // A short, warm wooden-bead tap with a soft glass-like overtone.
+                    // The two decaying partials are synthesized locally; no audio file or network is needed.
+                    val sampleRate = 44_100
+                    val durationSeconds = 0.19
+                    val sampleCount = (sampleRate * durationSeconds).toInt()
+                    val samples = ShortArray(sampleCount)
+                    for (i in 0 until sampleCount) {
+                        val t = i.toDouble() / sampleRate
+                        val bodyEnvelope = kotlin.math.exp(-t * 25.0)
+                        val shimmerEnvelope = kotlin.math.exp(-t * 34.0)
+                        val bodyPhase = 2.0 * Math.PI * (390.0 * t - 105.0 * t * t)
+                        val shimmerPhase = 2.0 * Math.PI * (1_180.0 * t - 1_500.0 * t * t)
+                        val body = kotlin.math.sin(bodyPhase) * bodyEnvelope * 0.42
+                        val shimmer = kotlin.math.sin(shimmerPhase) * shimmerEnvelope * 0.11
+                        val softAttack = (1.0 - kotlin.math.exp(-t * 900.0))
+                        samples[i] = ((body + shimmer) * softAttack * Short.MAX_VALUE)
+                            .toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    }
+
+                    val audioFormat = AudioFormat.Builder()
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setSampleRate(sampleRate)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .build()
+                    val attributes = AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                    val track = AudioTrack.Builder()
+                        .setAudioAttributes(attributes)
+                        .setAudioFormat(audioFormat)
+                        .setBufferSizeInBytes(samples.size * 2)
+                        .setTransferMode(AudioTrack.MODE_STATIC)
+                        .build()
+                    track.write(samples, 0, samples.size)
+                    track.play()
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        try { track.stop() } catch (_: Exception) { }
+                        track.release()
+                    }, 260)
                 } catch (_: Exception) { }
             }
         }
