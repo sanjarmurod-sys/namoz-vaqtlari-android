@@ -1,15 +1,22 @@
-# Namoz Vaqtlari — Andijon
+# Namoz Vaqtlari — Baliqchi tumani
 
-Ushbu repository hozirda ilova olishi uchun namoz vaqtlarining JSON manba faylini saqlaydi.
+Ilova namoz vaqtlarini quyidagi ommaviy Telegram kanali e'lon qiladigan haftalik jadvaldan olishi uchun mo‘ljallangan:
 
-## Manbalar
+- Manba kanal: https://t.me/namozvaqti365
+- Manba hudud: Baliqchi tumani
+- Jadval JSON: https://raw.githubusercontent.com/sanjarmurod-sys/namoz-vaqtlari-android/main/data/prayer-times.json
 
-- Telegram jadval kanali: https://t.me/namozvaqti365
-- Android ilova loyihasi uchun raw JSON: https://raw.githubusercontent.com/sanjarmurod-sys/namoz-vaqtlari-android/main/data/prayer-times.json
+## Kanalga admin huquqi kerak emas
 
-## Dastlabki jadval
+Kanal foydalanuvchiga tegishli emasligi va u yerga bot administrator sifatida qo‘shilmasligi sababli Telegram Bot API orqali kanal postlarini to‘g‘ridan-to‘g‘ri olish yo‘li ishlatilmaydi.
 
-Foydalanuvchi yuborgan 30.10–05.11 haftalik afishasidagi vaqtlar 7 kunga yozildi:
+Rejalashtirilgan avtomatik yangilash usuli — Telegram’ning ommaviy web preview sahifasini (https://t.me/s/namozvaqti365) va undagi oxirgi postlarning matn/media havolalarini tekshirish. Jadval rasmi topilsa, OCR orqali besh vaqt ajratiladi, sana oralig‘i tekshiriladi va keyin GitHub’dagi JSON yangilanadi.
+
+Bu faqat Telegram ushbu kanal uchun ommaviy web preview’ni taqdim etsa ishlaydi. Preview vaqtincha ochilmasa, HTML tuzilmasi o‘zgarsa yoki jadval rasmidan sana/vaqt ishonchli ajralmasa, tizim eski jadvalni saqlab qolishi va qo‘lda tekshirishni talab qilishi kerak. Hech qanday kanal adminligi yoki kanal egasining tokeni talab qilinmaydi.
+
+## Dastlabki jadval namunasi
+
+Foydalanuvchi yuborgan 30.10–05.11 afishasidan o‘qilgan qiymatlar:
 
 | Namoz | Vaqt |
 |---|---:|
@@ -19,38 +26,27 @@ Foydalanuvchi yuborgan 30.10–05.11 haftalik afishasidagi vaqtlar 7 kunga yozil
 | Shom | 17:20 |
 | Xufton | 19:05 |
 
-**Eslatma:** afishada haftalik bitta qiymatlar to‘plami berilgan. Shu sabab JSON’da ayni vaqtlar 7 sananing har biriga qo‘yilgan; bu har bir kun uchun alohida tasdiqlangan astronomik jadval degani emas. Keyingi kanal afishasi kelgach, yangi hafta ma’lumotlari yangilanishi kerak.
+Haftalik afishada bitta vaqtlar to‘plami ko‘rsatilgani sababli ushbu qiymatlar 7 kunga boshlang‘ich jadval sifatida nusxalangan. Bu har bir sana uchun alohida astronomik hisob-kitob tasdig‘i emas.
 
-## JSON shakli
+## Jadval manbasi
 
-```json
-{
-  "schemaVersion": 1,
-  "cityId": "andijan",
-  "cityName": "Andijon",
-  "timezone": "Asia/Tashkent",
-  "weekStart": "2026-10-30",
-  "weekEnd": "2026-11-05",
-  "days": [
-    {
-      "date": "2026-10-30",
-      "fajr": "06:10",
-      "dhuhr": "13:00",
-      "asr": "15:40",
-      "maghrib": "17:20",
-      "isha": "19:05"
-    }
-  ]
-}
-```
+data/prayer-times.json ilovaga quyidagi ma'lumotni beradi:
 
-## Joriy holat
+- cityId: baliqchi
+- cityName: Baliqchi tumani
+- timezone: Asia/Tashkent
+- days: har bir sana uchun Bomdod, Peshin, Asr, Shom, Xufton
 
-- [x] Yangi repository alohida yaratildi; eski `namoz-app` repository’ga o‘zgartirish kiritilmadi.
-- [x] Boshlang‘ich JSON jadvali qo‘shildi.
-- [ ] Android Kotlin/WebView manba fayllarini ushbu repository’ga joylash.
-- [ ] GitHub Actions orqali debug APK yig‘ib tekshirish.
-- [ ] Telegram bot yaratish, uni `@namozvaqti365` kanaliga administrator qilish.
-- [ ] Render’da `TELEGRAM_BOT_TOKEN` va GitHub fine-grained tokenini maxfiy environment variable sifatida sozlash.
+## Hozirgi holat
 
-**Muhim:** Telegram avtomatik yangilanishi hozircha faol emas. Bot tokeni va kanal admin huquqi sozlanmaguncha GitHub JSON o‘z-o‘zidan yangilanmaydi. Android APK ham hozircha yig‘ilmagan.
+- [x] Alohida namoz-vaqtlari-android repository ochilgan.
+- [x] Boshlang‘ich haftalik jadval JSON’ga yozilgan.
+- [x] Hudud Andijon deb emas, Baliqchi tumani deb belgilangan.
+- [x] Kanal adminligi talab qilinmaydigan ommaviy web-preview usuli tanlangan.
+- [ ] Web-preview sahifasini o‘qish, yangi postni aniqlash va rasmni OCR qilish ishchi skriptini joylash.
+- [ ] GitHub Contents API orqali JSON’ni yangilashni ulash.
+- [ ] Jadval xatolik/ambiguitet holatida eski qiymatlarni saqlash testlari.
+- [ ] Android Kotlin/WebView manba kodini ushbu repository’ga to‘liq joylash.
+- [ ] GitHub Actions orqali APK yig‘ish va natijani tekshirish.
+
+**Muhim:** Telegram’dan avtomatik yangilash hali ishga tushmagan. Hozir repository’da boshlang‘ich JSON va ushbu qo‘llanma bor; Android manba fayllari to‘liq joylanmagan, APK ham yig‘ilmagan.
