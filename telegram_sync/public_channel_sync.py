@@ -187,8 +187,12 @@ def update_json(start: date, end: date, times: list[str], post: dict) -> bool:
     )
     times_obj = dict(zip(keys, times))
     days = [{"date": (start+timedelta(days=i)).isoformat(), **times_obj} for i in range(7)]
-    if existing.get("weekStart") == start.isoformat() and existing.get("days") == days:
-        LOG.info("Joriy haftalik jadval o‘zgarmagan.")
+    if (
+        existing.get("weekStart") == start.isoformat()
+        and existing.get("days") == days
+        and str(existing.get("sourcePostId", "")) == str(post["id"])
+    ):
+        LOG.info("Joriy haftalik jadval va manba posti o‘zgarmagan.")
         return False
     payload = {
         "schemaVersion": 1, "cityId": CITY_ID, "cityName": CITY_NAME, "timezone": TZ.key,
