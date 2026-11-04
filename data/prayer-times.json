@@ -5,8 +5,17 @@
   "timezone": "Asia/Tashkent",
   "weekStart": "2026-10-30",
   "weekEnd": "2026-11-05",
-  "updatedAt": "2026-11-04T00:00:00+05:00",
-  "source": "Foydalanuvchi yuborgan @namozvaqti365 kanal afishasi namunasi; kanal tavsifi Baliqchi tumani vaqtlarini ko‘rsatadi",
+  "updatedAt": "2026-11-04T23:05:58+05:00",
+  "source": "Ommaviy Telegram preview: @namozvaqti365/1063",
+  "sourcePostId": "1063",
+  "sourcePublishedAt": "2026-10-29T12:19:37+00:00",
+  "sourceTimes": [
+    "06:10",
+    "13:00",
+    "15:40",
+    "17:20",
+    "19:05"
+  ],
   "days": [
     {
       "date": "2026-10-30",
