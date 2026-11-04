@@ -33,7 +33,7 @@ CITY_ID = os.getenv("CITY_ID", "baliqchi")
 CITY_NAME = os.getenv("CITY_NAME", "Baliqchi tumani")
 PREVIEW = f"https://t.me/s/{CHANNEL}"
 API = f"https://api.github.com/repos/{REPO}/contents/{DATA_PATH}"
-DATE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[./]\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*[./]\s*(\d{1,2})(?!\d)")
+DATE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[.,/]\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?!\d)")
 TIME_RE = re.compile(r"(?<!\d)(2[0-3]|[01]?\d)\s*[-:.,٫]\s*([0-5]\d)(?!\d)")
 HTTP = requests.Session()
 HTTP.headers.update({"User-Agent": "Mozilla/5.0 (compatible; NamozVaqtlari/1.0)", "Accept": "text/html,*/*"})
@@ -63,7 +63,7 @@ def parse_week(text: str, today: date | None = None) -> tuple[date, date]:
     return start, end
 
 
-def read_times(image_bytes: bytes) -> list[str]:
+def read_times(image_bytes: bytes) -> tuple[list[str], str]:
     image = Image.open(io.BytesIO(image_bytes)).convert("L")
     scale = max(4, min(9, 1800 // max(image.width, 1)))
     image = image.resize((image.width*scale, image.height*scale), Image.Resampling.LANCZOS)
@@ -71,6 +71,7 @@ def read_times(image_bytes: bytes) -> list[str]:
     image = ImageEnhance.Contrast(image).enhance(1.45)
     image = image.filter(ImageFilter.UnsharpMask(radius=2, percent=180, threshold=2))
     rows: list[dict] = []
+    ocr_lines: list[str] = []
     for psm in (11, 4, 6, 12):
         d = pytesseract.image_to_data(image, lang="eng", config=f"--oem 1 --psm {psm}", output_type=Output.DICT)
         by_y: dict[int, list[tuple[int, str, float]]] = defaultdict(list)
@@ -87,8 +88,10 @@ def read_times(image_bytes: bytes) -> list[str]:
             if group is None:
                 group = {"y": y, "choices": []}
                 rows.append(group)
-            text = "".join(t[1] for t in sorted(tokens))
-            if DATE_RE.search(text):
+            text = " ".join(t[1] for t in sorted(tokens))
+            ocr_lines.append(text)
+            compact_text = re.sub(r"\\s+", "", text)
+            if DATE_RE.search(compact_text):
                 continue
             matches = list(TIME_RE.finditer(text))
             if len(matches) == 1:
@@ -109,7 +112,7 @@ def read_times(image_bytes: bytes) -> list[str]:
     mins = [int(v[:2])*60+int(v[3:]) for v in values]
     if any(b <= a for a,b in zip(mins, mins[1:])):
         raise ValueError("Vaqtlar ketma-ketligi shubhali.")
-    return values
+    return values, "\\n".join(ocr_lines)
 
 
 def poster_photo(node) -> str | None:
@@ -169,7 +172,7 @@ def update_json(start: date, end: date, times: list[str], post: dict) -> bool:
             return False
         try:
             old_week = date.fromisoformat(existing.get("weekStart", ""))
-        except ValueError:
+        except (TypeError, ValueError):
             old_week = None
         if old_week and old_week > start:
             LOG.warning("Eski post yangi jadvalni almashtirmaydi.")
@@ -212,8 +215,8 @@ def main() -> None:
         try:
             img = HTTP.get(post["photo"], timeout=30)
             img.raise_for_status()
-            times = read_times(img.content)
-            start, end = parse_week(post["caption"] + " " + " ".join(times), today)
+            times, poster_text = read_times(img.content)
+            start, end = parse_week(post["caption"] + " " + poster_text, today)
             update_json(start, end, times, post)
             return
         except Exception as e:
