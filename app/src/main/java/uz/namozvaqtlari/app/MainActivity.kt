@@ -364,55 +364,95 @@ class MainActivity : Activity(), SensorEventListener {
             }.start()
         }
 
-        @JavascriptInterface fun tasbihTick() {
+        @JavascriptInterface fun tasbihTick(preset: Int) {
+            runOnUiThread { playTasbihSound(preset) }
+        }
+
+        @JavascriptInterface fun previewTasbihSound(preset: Int) {
+            runOnUiThread { playTasbihSound(preset) }
+        }
+
+        @JavascriptInterface fun playQiblaAlignedSound() {
             runOnUiThread {
                 try {
-                    // A muted wooden-bead touch: a filtered noise transient plus two warm resonances.
-                    // Entirely synthesized on-device; it is not a system beep or an audio-file sample.
                     val sampleRate = 44_100
-                    val durationSeconds = 0.17
-                    val sampleCount = (sampleRate * durationSeconds).toInt()
-                    val samples = ShortArray(sampleCount)
-                    val random = kotlin.random.Random.Default
-                    var filteredNoise = 0.0
-                    for (i in 0 until sampleCount) {
+                    val count = (sampleRate * 0.34).toInt()
+                    val samples = ShortArray(count)
+                    for (i in 0 until count) {
                         val t = i.toDouble() / sampleRate
-                        val whiteNoise = random.nextDouble(-1.0, 1.0)
-                        filteredNoise += 0.12 * (whiteNoise - filteredNoise)
-                        val transient = filteredNoise * kotlin.math.exp(-t * 92.0) * 0.24
-                        val woodBody = kotlin.math.sin(2.0 * Math.PI * (265.0 * t - 62.0 * t * t)) *
-                            kotlin.math.exp(-t * 31.0) * 0.36
-                        val softResonance = kotlin.math.sin(2.0 * Math.PI * 565.0 * t) *
-                            kotlin.math.exp(-t * 46.0) * 0.075
-                        val softAttack = 1.0 - kotlin.math.exp(-t * 1_200.0)
-                        val sample = (transient + woodBody + softResonance) * softAttack
-                        samples[i] = (sample * Short.MAX_VALUE)
-                            .toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                        val envelope = (1.0 - kotlin.math.exp(-t * 45.0)) * kotlin.math.exp(-t * 8.5)
+                        val glide = 660.0 + 110.0 * kotlin.math.sin(Math.PI * t / 0.34)
+                        val tone = kotlin.math.sin(2.0 * Math.PI * glide * t) * 0.22 +
+                            kotlin.math.sin(2.0 * Math.PI * glide * 2.0 * t) * 0.045
+                        samples[i] = (tone * envelope * Short.MAX_VALUE).toInt().toShort()
                     }
-
-                    val audioFormat = AudioFormat.Builder()
-                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                        .setSampleRate(sampleRate)
-                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                        .build()
-                    val attributes = AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                    val track = AudioTrack.Builder()
-                        .setAudioAttributes(attributes)
-                        .setAudioFormat(audioFormat)
-                        .setBufferSizeInBytes(samples.size * 2)
-                        .setTransferMode(AudioTrack.MODE_STATIC)
-                        .build()
-                    track.write(samples, 0, samples.size)
-                    track.play()
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        try { track.stop() } catch (_: Exception) { }
-                        track.release()
-                    }, 260)
+                    playPcm(samples, sampleRate, AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
                 } catch (_: Exception) { }
             }
+        }
+
+        private fun playTasbihSound(preset: Int) {
+            try {
+                val profiles = arrayOf(
+                    doubleArrayOf(265.0, 530.0, 1060.0, .35, .12, .035, 29.0, 0.0),
+                    doubleArrayOf(880.0, 1320.0, 1760.0, .18, .13, .08, 17.0, 0.0),
+                    doubleArrayOf(560.0, 820.0, 1420.0, .24, .12, .06, 23.0, 180.0),
+                    doubleArrayOf(420.0, 840.0, 1260.0, .25, .15, .08, 14.0, 35.0),
+                    doubleArrayOf(150.0, 310.0, 620.0, .42, .20, .05, 39.0, 18.0),
+                    doubleArrayOf(720.0, 1060.0, 1940.0, .21, .13, .07, 12.0, 0.0),
+                    doubleArrayOf(330.0, 660.0, 990.0, .33, .16, .08, 23.0, 0.0),
+                    doubleArrayOf(1050.0, 1550.0, 2100.0, .18, .12, .08, 21.0, 0.0),
+                    doubleArrayOf(480.0, 720.0, 960.0, .14, .10, .04, 42.0, 0.0),
+                    doubleArrayOf(240.0, 480.0, 960.0, .30, .13, .06, 33.0, 0.0)
+                )
+                val p = profiles[preset.coerceIn(0, 9)]
+                val sampleRate = 44_100
+                val duration = 0.19
+                val count = (sampleRate * duration).toInt()
+                val samples = ShortArray(count)
+                val random = kotlin.random.Random.Default
+                var filteredNoise = 0.0
+                for (i in 0 until count) {
+                    val t = i.toDouble() / sampleRate
+                    filteredNoise += .12 * (random.nextDouble(-1.0, 1.0) - filteredNoise)
+                    val transient = filteredNoise * kotlin.math.exp(-t * 92.0) * .12
+                    val body = kotlin.math.sin(2.0 * Math.PI * (p[0] * t - p[6] * t * t)) *
+                        kotlin.math.exp(-t * 28.0) * p[3]
+                    val overtone = kotlin.math.sin(2.0 * Math.PI * p[1] * t) *
+                        kotlin.math.exp(-t * 39.0) * p[4]
+                    val shimmer = kotlin.math.sin(2.0 * Math.PI * p[2] * t) *
+                        kotlin.math.exp(-t * 52.0) * p[5]
+                    val softAttack = 1.0 - kotlin.math.exp(-t * 900.0)
+                    val sample = (transient + body + overtone + shimmer) * softAttack
+                    samples[i] = (sample * Short.MAX_VALUE).toInt()
+                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                }
+                playPcm(samples, sampleRate, AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+            } catch (_: Exception) { }
+        }
+
+        private fun playPcm(samples: ShortArray, sampleRate: Int, usage: Int) {
+            val audioFormat = AudioFormat.Builder()
+                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                .setSampleRate(sampleRate)
+                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                .build()
+            val attributes = AudioAttributes.Builder()
+                .setUsage(usage)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            val track = AudioTrack.Builder()
+                .setAudioAttributes(attributes)
+                .setAudioFormat(audioFormat)
+                .setBufferSizeInBytes(samples.size * 2)
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build()
+            track.write(samples, 0, samples.size)
+            track.play()
+            Handler(Looper.getMainLooper()).postDelayed({
+                try { track.stop() } catch (_: Exception) { }
+                track.release()
+            }, 480)
         }
 
         @JavascriptInterface fun tasbihVibrate() {
