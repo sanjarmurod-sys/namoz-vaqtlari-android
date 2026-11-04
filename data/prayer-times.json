@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "cityId": "andijan",
-  "cityName": "Andijon",
+  "cityId": "baliqchi",
+  "cityName": "Baliqchi tumani",
   "timezone": "Asia/Tashkent",
   "weekStart": "2026-10-30",
   "weekEnd": "2026-11-05",
   "updatedAt": "2026-11-04T00:00:00+05:00",
-  "source": "Foydalanuvchi yuborgan @namozvaqti365 kanal afishasi namunasi",
+  "source": "Foydalanuvchi yuborgan @namozvaqti365 kanal afishasi namunasi; kanal tavsifi Baliqchi tumani vaqtlarini ko‘rsatadi",
   "days": [
     {
       "date": "2026-10-30",
