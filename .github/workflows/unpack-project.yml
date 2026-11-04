@@ -2,7 +2,6 @@ name: Extract project source and start APK build
 on:
   push:
     paths:
-      - 'source-parts/**'
       - 'source-ready.trigger'
   workflow_dispatch:
 permissions:
