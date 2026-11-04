@@ -78,8 +78,8 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
 
     # Prayer tables conventionally place times in the right-hand column.
     # A digits-only whitelist avoids confusing Uzbek prayer names with numbers.
-    right_column = original.crop((int(original.width * 0.48), 0, original.width, original.height))
-    scale = max(6, min(10, 1800 // max(right_column.width, 1)))
+    right_column = original.crop((int(original.width * 0.50), 0, original.width, original.height))
+    scale = max(3, min(6, 1800 // max(right_column.width, 1)))
     right_column = right_column.resize(
         (right_column.width * scale, right_column.height * scale), Image.Resampling.LANCZOS
     )
@@ -221,6 +221,7 @@ def main() -> None:
             img.raise_for_status()
             times, poster_text = read_times(img.content)
             start, end = parse_week(post["caption"] + " " + poster_text, today)
+            LOG.info("Validated poster #%s for %s–%s; times=%s", post["id"], start, end, ", ".join(times))
             update_json(start, end, times, post)
             return
         except Exception as e:
