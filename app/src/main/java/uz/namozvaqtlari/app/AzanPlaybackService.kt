@@ -8,10 +8,13 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.widget.Toast
 import java.io.File
 
@@ -25,6 +28,9 @@ class AzanPlaybackService : Service() {
     }
 
     private var player: MediaPlayer? = null
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var audioManager: AudioManager? = null
+    private var focusRequest: AudioFocusRequest? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -42,8 +48,53 @@ class AzanPlaybackService : Service() {
         val slot = intent?.getStringExtra(EXTRA_VOICE_SLOT) ?: "1"
         startForeground(NOTIFICATION_ID, buildNotification(prayerName))
         stopPlayback()
+        acquirePlaybackResources()
         playSelectedVoice(slot)
         return START_NOT_STICKY
+    }
+
+    private fun acquirePlaybackResources() {
+        try {
+            val power = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "NamozVaqtlari:Azan").apply {
+                setReferenceCounted(false)
+                acquire(10 * 60 * 1000L)
+            }
+        } catch (_: Exception) { }
+
+        try {
+            audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build()
+                    )
+                    .setAcceptsDelayedFocusGain(false)
+                    .setWillPauseWhenDucked(false)
+                    .build()
+                focusRequest?.let { audioManager?.requestAudioFocus(it) }
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager?.requestAudioFocus(null, AudioManager.STREAM_ALARM, AudioManager.AUDIOFOCUS_GAIN)
+            }
+        } catch (_: Exception) { }
+    }
+
+    private fun releasePlaybackResources() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                focusRequest?.let { audioManager?.abandonAudioFocusRequest(it) }
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager?.abandonAudioFocus(null)
+            }
+        } catch (_: Exception) { }
+        focusRequest = null
+        try { if (wakeLock?.isHeld == true) wakeLock?.release() } catch (_: Exception) { }
+        wakeLock = null
     }
 
     private fun createChannel() {
@@ -93,7 +144,7 @@ class AzanPlaybackService : Service() {
             media.setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build()
             )
             if (customFile?.exists() == true) media.setDataSource(customFile.absolutePath)
@@ -117,6 +168,7 @@ class AzanPlaybackService : Service() {
         try { player?.stop() } catch (_: Exception) { }
         try { player?.release() } catch (_: Exception) { }
         player = null
+        releasePlaybackResources()
     }
 
     override fun onDestroy() {
