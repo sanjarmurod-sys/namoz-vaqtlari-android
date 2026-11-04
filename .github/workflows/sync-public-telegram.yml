@@ -1,6 +1,12 @@
 name: Ommaviy Telegram jadvalini tekshirish
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'telegram_sync/public_channel_sync.py'
+      - 'telegram_sync/tests/**'
+      - '.github/workflows/sync-public-telegram.yml'
   schedule:
     - cron: '17 */3 * * *'
   workflow_dispatch:
