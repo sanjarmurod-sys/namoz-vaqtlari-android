@@ -171,6 +171,117 @@ p,.helper,.field label,.switch-row small,.compass-hint{line-height:1.65}
 .zikr-item strong{font-weight:700}
 @media(prefers-reduced-motion:reduce){.tasbih-counter.pulse{animation:none}.needle{transition:none}}
 
+
+/* Larger, clearer typography and comfortable touch targets */
+body{font-size:15px;line-height:1.62}
+.brand h1{font-size:17px}.brand small{font-size:11px}
+.section-head h2{font-size:18px}.section-head span{font-size:12px}
+.hero{min-height:276px;padding:22px 19px 20px}
+.date{font-size:13px}.clock{font-size:48px}.greeting{font-size:14px}
+.next-prayer .label{font-size:13px}.next-prayer strong{font-size:19px}.countdown{font-size:26px}.countdown small{font-size:12px}
+.card{padding:19px}.card h3{font-size:17px}.card p{font-size:13px;line-height:1.7}
+.field label,.field-label{font-size:13px}.field select,.field input[type=text],.field input[type=number],.field input[type=time]{font-size:15px;padding:14px}
+.btn{font-size:13px;padding:13px 16px;min-height:46px}.helper{font-size:12px;line-height:1.7}
+.switch-row strong{font-size:14px}.switch-row small{font-size:12px}
+.manual-row strong,.voice-slot strong,.prayer-voice strong{font-size:14px}
+.manual-row small,.voice-slot small{font-size:11px}
+.prayer-voice select{font-size:12px;padding:10px 6px}
+.nav-item{font-size:11px;gap:6px;padding:10px 5px 7px}.nav-item span{font-size:21px}
+.icon-btn{width:46px;height:46px;font-size:20px}
+.toast{font-size:13px;padding:13px 17px}
+.compass-hint{font-size:13px;line-height:1.7}.qibla-stat small{font-size:12px}.qibla-stat strong{font-size:24px}
+.tasbih-count{font-size:54px}.tasbih-target{font-size:15px}.tasbih-current{font-size:17px}
+.tasbih-main{width:84px;height:84px;font-size:38px}
+.tasbih-action{min-height:52px}
+.zikr-item strong{font-size:14px}.zikr-item small{font-size:12px}.zikr-item .zikr-count{font-size:16px}
+
+/* Prayer times are presented as large, two-column tiles instead of a narrow list */
+.prayer-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.prayer-card{position:relative;display:block;min-width:0;min-height:132px;padding:15px 14px 13px;border-radius:19px;overflow:hidden}
+.prayer-card:after{content:"";position:absolute;width:84px;height:84px;right:-32px;bottom:-39px;border:1px solid #e4c47b2c;border-radius:50%;box-shadow:0 0 0 10px #e4c47b08,0 0 0 20px #e4c47b06;pointer-events:none}
+.prayer-icon{width:44px;height:44px;border-radius:15px;font-size:22px}
+.prayer-info{margin-top:12px;max-width:100%}
+.prayer-info strong{font-size:16px;line-height:1.25}
+.prayer-info small{font-size:11px;line-height:1.4;margin-top:4px}
+.prayer-time{position:absolute;top:25px;right:13px;font-size:21px;line-height:1.2}
+.prayer-card.next{box-shadow:inset 0 0 0 1px #f0cd7c66,0 9px 24px #0005}
+.prayer-card.next:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,#d1a64d12,transparent 65%);pointer-events:none}
+.status-tag{font-size:10px;margin-top:6px}
+.prayer-card:nth-child(5){grid-column:1/-1;display:flex;align-items:center;gap:14px;min-height:88px;padding:13px 16px}
+.prayer-card:nth-child(5) .prayer-icon{flex:none}
+.prayer-card:nth-child(5) .prayer-info{margin-top:0;flex:1}
+.prayer-card:nth-child(5) .prayer-time{position:static;font-size:23px;white-space:nowrap}
+@media(max-width:350px){
+  .prayer-card{min-height:126px;padding:13px 11px}
+  .prayer-time{font-size:18px;right:10px;top:24px}
+  .prayer-info strong{font-size:15px}
+  .prayer-card:nth-child(5){padding:12px 11px;gap:8px}
+  .prayer-card:nth-child(5) .prayer-time{font-size:19px}
+  .clock{font-size:43px}
+}
+
+/* Ten sound-linked tasbih looks: each preset changes the counter's full visual identity */
+.tasbih-preset-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 2px 10px}
+.tasbih-preset-header strong{display:block;font-size:15px;color:#ffdf91}
+.tasbih-preset-header small{display:block;font-size:11px;color:#a6b9ac;margin-top:3px}
+.tasbih-preset-header>span{font-size:12px;font-weight:800;color:#ffdf91;font-variant-numeric:tabular-nums}
+.tasbih-presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.tasbih-preset{display:flex;align-items:center;gap:9px;min-width:0;min-height:70px;padding:10px;border-radius:15px;border:1px solid #d9b66c33;background:linear-gradient(140deg,#0b3022,#061b14);color:#f4efdf;text-align:left;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.tasbih-preset:active{transform:scale(.975)}
+.tasbih-preset.selected{border-color:#ffdf91;box-shadow:0 0 0 1px #e7c87950,0 7px 20px #0005;background:linear-gradient(140deg,#14583b,#0a2a1d)}
+.preset-icon{width:39px;height:39px;flex:none;display:grid;place-items:center;border-radius:13px;font-size:20px;background:#ffffff10;border:1px solid #ffffff20}
+.preset-copy{min-width:0;flex:1}
+.preset-copy strong{display:block;font-size:13px;line-height:1.3}
+.preset-copy small{display:block;color:#b3c3b8;font-size:10px;line-height:1.35;margin-top:4px}
+.preset-preview{width:31px;height:31px;flex:none;border:1px solid #e0c47a70;border-radius:50%;background:#d6b66b12;color:#ffe6a0;font-size:11px}
+.tasbih-counter.theme-0{background:radial-gradient(circle at 50% 40%,#17613e,#041d14 70%);border-color:#e6c375}
+.tasbih-counter.theme-0 .tasbih-ring{border:2px dashed #e6c37540}
+.tasbih-counter.theme-1{background:radial-gradient(circle at 35% 25%,#41637b,#10293b 62%,#071824);border:2px solid #b9e5ff;box-shadow:0 0 0 8px #92d6ff18,0 18px 42px #0009,inset 0 0 35px #06121d}
+.tasbih-counter.theme-1 .tasbih-ring{border:3px double #bdeaff70}
+.tasbih-counter.theme-1 .tasbih-bead{background:radial-gradient(circle at 30% 25%,#fff,#8bc8ed 70%);border-color:#dbf4ff;border-radius:38%}
+.tasbih-counter.theme-2{background:radial-gradient(circle at 50% 30%,#1a7473,#073039 72%);border:2px solid #8ce7d9;box-shadow:0 0 0 8px #72e5d220,0 18px 42px #0009,inset 0 0 34px #031a21}
+.tasbih-counter.theme-2 .tasbih-ring{border:2px dotted #8ce7d9a0}
+.tasbih-counter.theme-2 .tasbih-bead{width:8px;height:10px;border-radius:60% 60% 60% 10%;transform:translate(-50%,-50%) rotate(45deg);background:linear-gradient(145deg,#c2fff2,#369a9b);border-color:#d4fff7}
+.tasbih-counter.theme-3{background:radial-gradient(circle at 50% 40%,#78432e,#291813 72%);border:2px solid #e7b875;box-shadow:0 0 0 8px #c98f4b1c,0 18px 42px #0009,inset 0 0 35px #170a08}
+.tasbih-counter.theme-3 .tasbih-ring{border:1px solid #f4ce9270;outline:1px solid #f4ce9230;outline-offset:5px}
+.tasbih-counter.theme-3 .tasbih-bead{background:linear-gradient(145deg,#f7d7a0,#9e542e);border-color:#f3cb88;border-radius:3px}
+.tasbih-counter.theme-4{background:radial-gradient(circle at 50% 40%,#39404a,#101720 72%);border:2px solid #a7b2bd;box-shadow:0 0 0 8px #a7b2bd18,0 18px 42px #0009,inset 0 0 40px #080c12}
+.tasbih-counter.theme-4 .tasbih-ring{border:4px solid #aab6c433}
+.tasbih-counter.theme-4 .tasbih-bead{background:radial-gradient(circle at 35% 25%,#e4e9ed,#697887);border-color:#d4dce4}
+.tasbih-counter.theme-5{background:radial-gradient(circle at 45% 35%,#84502d,#2d1a10 74%);border:2px solid #f0c06b;box-shadow:0 0 0 8px #dfaa4d1b,0 18px 42px #0009,inset 0 0 35px #1d0e08}
+.tasbih-counter.theme-5 .tasbih-ring{border:2px dotted #f2c77680}
+.tasbih-counter.theme-5 .tasbih-bead{background:linear-gradient(145deg,#fff0ad,#c57d2d);border-color:#ffe1a0;width:9px;height:6px;border-radius:4px}
+.tasbih-counter.theme-6{background:repeating-linear-gradient(90deg,#0d3726 0 17px,#10432d 17px 20px);border:2px solid #95c68c;box-shadow:0 0 0 8px #76b87c1c,0 18px 42px #0009,inset 0 0 42px #04170e}
+.tasbih-counter.theme-6 .tasbih-ring{border:2px dashed #b9df9a70}
+.tasbih-counter.theme-6 .tasbih-bead{background:linear-gradient(145deg,#d8eaa7,#4c8a4d);border-color:#c9e6a2;border-radius:2px}
+.tasbih-counter.theme-7{background:radial-gradient(circle at 50% 28%,#707e8b,#263642 66%,#101c27);border:2px solid #dce7ed;box-shadow:0 0 0 8px #c4d9e21b,0 18px 42px #0009,inset 0 0 35px #101820}
+.tasbih-counter.theme-7 .tasbih-ring{border:3px double #e1edf280}
+.tasbih-counter.theme-7 .tasbih-bead{background:linear-gradient(145deg,#fff,#7e9aa8);border-color:#e6f2f8;border-radius:50% 20%}
+.tasbih-counter.theme-8{background:radial-gradient(circle at 45% 34%,#443b78,#15122f 74%);border:2px solid #c7b9ff;box-shadow:0 0 0 8px #a68eff1b,0 18px 42px #0009,inset 0 0 36px #09071d}
+.tasbih-counter.theme-8 .tasbih-ring{border:2px dashed #b6a7ff75}
+.tasbih-counter.theme-8 .tasbih-bead{background:radial-gradient(circle at 30% 25%,#f4eaff,#8074c8);border-color:#d8cbff}
+.tasbih-counter.theme-9{background:radial-gradient(circle at 50% 34%,#824457,#2d1423 73%);border:2px solid #f4b8c9;box-shadow:0 0 0 8px #f1a3c71c,0 18px 42px #0009,inset 0 0 37px #190a14}
+.tasbih-counter.theme-9 .tasbih-ring{border:2px dotted #f5c2d280}
+.tasbih-counter.theme-9 .tasbih-bead{background:radial-gradient(circle at 33% 25%,#fff3f6,#be7290);border-color:#ffdce7;border-radius:30%}
+.tasbih-counter.theme-1 .tasbih-count,.tasbih-counter.theme-2 .tasbih-count,.tasbih-counter.theme-3 .tasbih-count,.tasbih-counter.theme-4 .tasbih-count,.tasbih-counter.theme-5 .tasbih-count,.tasbih-counter.theme-6 .tasbih-count,.tasbih-counter.theme-7 .tasbih-count,.tasbih-counter.theme-8 .tasbih-count,.tasbih-counter.theme-9 .tasbih-count{color:#fff0ca}
+.tasbih-counter.theme-1 .tasbih-bead.done,.tasbih-counter.theme-2 .tasbih-bead.done,.tasbih-counter.theme-3 .tasbih-bead.done,.tasbih-counter.theme-4 .tasbih-bead.done,.tasbih-counter.theme-5 .tasbih-bead.done,.tasbih-counter.theme-6 .tasbih-bead.done,.tasbih-counter.theme-7 .tasbih-bead.done,.tasbih-counter.theme-8 .tasbih-bead.done,.tasbih-counter.theme-9 .tasbih-bead.done{background:#fff4d2;box-shadow:0 0 10px #fff0c9a0}
+.tasbih-preset.theme-card-1 .preset-icon{background:#33516b;color:#cff0ff}.tasbih-preset.theme-card-2 .preset-icon{background:#145b5c;color:#9cfff0}
+.tasbih-preset.theme-card-3 .preset-icon{background:#603c29;color:#ffdfa7}.tasbih-preset.theme-card-4 .preset-icon{background:#343e4a;color:#e2edf5}
+.tasbih-preset.theme-card-5 .preset-icon{background:#734324;color:#ffdf91}.tasbih-preset.theme-card-6 .preset-icon{background:#17432e;color:#cbecac}
+.tasbih-preset.theme-card-7 .preset-icon{background:#425365;color:#effaff}.tasbih-preset.theme-card-8 .preset-icon{background:#3c326f;color:#e4dcff}
+.tasbih-preset.theme-card-9 .preset-icon{background:#633448;color:#ffe1eb}
+.tasbih-preset.selected .preset-icon{box-shadow:0 0 0 2px #f9dfa08c,0 0 16px #f0d08233}
+
+/* Smooth, intentional motion without excessive bounce */
+.page{animation:pageEnter .32s cubic-bezier(.2,.75,.25,1)}
+@keyframes pageEnter{from{opacity:0;transform:translateY(10px) scale(.995)}to{opacity:1;transform:translateY(0) scale(1)}}
+.prayer-card,.card,.btn,.nav-item,.icon-btn{transition:transform .2s ease,box-shadow .25s ease,border-color .25s ease,background .25s ease}
+.prayer-card:active{transform:scale(.985)}
+.btn:active,.icon-btn:active{transform:scale(.97)}
+.compass.qibla-locked{animation:qiblaConfirm .65s ease}
+@keyframes qiblaConfirm{0%{filter:brightness(1)}25%{filter:brightness(1.48);box-shadow:0 0 0 10px #f0d08335,0 0 42px #f0d08360}100%{filter:brightness(1)}}
+@media(prefers-reduced-motion:reduce){.page,.prayer-card,.card,.btn,.nav-item,.icon-btn,.tasbih-preset{animation:none;transition:none}}
+
 </style>
 </head>
 <body>
@@ -199,7 +310,7 @@ p,.helper,.field label,.switch-row small,.compass-hint{line-height:1.65}
 
     <div class="section-head"><h2>Bugungi namoz vaqtlari</h2><span id="calculationLabel">Hisoblangan vaqtlar</span></div>
     <div class="prayer-list" id="prayerList"></div>
-    <div class="sunrise"><span>☀ Quyosh chiqishi</span><strong id="sunriseTime">--:--</strong></div>
+    
     <p class="note">Namoz vaqtlari tanlangan hisoblash usuli va telefoningiz sanasi hamda vaqt mintaqasiga asoslanadi. Mahalliy masjid taqvimi bilan solishtirib tekshiring.</p>
 
     <div class="section-head"><h2>Tezkor sozlamalar</h2><span>Bir zumda boshqarish</span></div>
@@ -270,6 +381,8 @@ p,.helper,.field label,.switch-row small,.compass-hint{line-height:1.65}
         <div class="field" style="margin:0"><label for="customZikrName">Zikr nomi</label><input id="customZikrName" type="text" maxlength="70" placeholder="Masalan: Astag‘firulloh"></div>
         <div class="row2"><div class="field" style="margin:0"><label for="customZikrTarget">Miqdori</label><input id="customZikrTarget" type="number" min="1" max="100000" value="33"></div><button class="btn primary" style="align-self:end" onclick="addCustomZikr()">Saqlash</button></div>
       </div>
+      <div class="tasbih-preset-header"><div><strong>Ovoz va tasbeh uslubi</strong><small>Har bir tanlov o‘z ovozi va bezagiga ega</small></div><span id="tasbihPresetCount">01 / 10</span></div>
+      <div id="tasbihPresets" class="tasbih-presets"></div>
       <div class="switch-row" style="margin-top:13px"><div><strong>Sanash ovozi</strong><small>Har bosishda yengil tovush</small></div><input id="tasbihSound" class="switch" type="checkbox" onchange="toggleTasbihSound(this.checked)"></div>
       <div class="switch-row"><div><strong>Yengil tebranish</strong><small>Har bosishda qisqa tebranish</small></div><input id="tasbihVibration" class="switch" type="checkbox" onchange="toggleTasbihVibration(this.checked)"></div>
     </div>
@@ -388,16 +501,17 @@ const DEFAULTS = {
   voice:{fajr:'1',dhuhr:'1',asr:'1',maghrib:'1',isha:'1'},
   manual:{fajr:false,dhuhr:false,asr:false,maghrib:false,isha:false},
   manualTimes:{fajr:'',dhuhr:'',asr:'',maghrib:'',isha:''},voiceNames:{'1':'Ovoz 1 tanlanmagan','2':'Ovoz 2 tanlanmagan','3':'Ovoz 3 tanlanmagan'},
-  tasbihItems:[{id:'subhanallah',name:'Subhanalloh',target:33},{id:'alhamdulillah',name:'Alhamdulillah',target:33},{id:'allahuakbar',name:'Allohu Akbar',target:33}],tasbihIndex:0,tasbihCount:0,tasbihSound:true,tasbihVibration:true,telegramSyncEnabled:true
+  tasbihItems:[{id:'subhanallah',name:'Subhanalloh',target:33},{id:'alhamdulillah',name:'Alhamdulillah',target:33},{id:'allahuakbar',name:'Allohu Akbar',target:33}],tasbihIndex:0,tasbihCount:0,tasbihPreset:0,tasbihSound:true,tasbihVibration:true,telegramSyncEnabled:true
 };
 let settings = loadSettings();
 let latestTimes = null;
 let remoteSchedule = null;
 let magneticHeading = null;
+let qiblaAlignmentArmed = true;
 let qiblaBearing = 0;
 let toastTimer = null;
 function loadSettings(){
-  try{const saved=JSON.parse(localStorage.getItem('namozSettings')||'{}');const merged={...JSON.parse(JSON.stringify(DEFAULTS)),...saved};['enabled','voice','manual','manualTimes','voiceNames'].forEach(k=>merged[k]={...DEFAULTS[k],...(saved[k]||{})});if(!Array.isArray(merged.tasbihItems)||!merged.tasbihItems.length)merged.tasbihItems=JSON.parse(JSON.stringify(DEFAULTS.tasbihItems));merged.tasbihIndex=Math.max(0,Math.min(Number(merged.tasbihIndex)||0,merged.tasbihItems.length-1));merged.tasbihCount=Math.max(0,Number(merged.tasbihCount)||0);return merged;}
+  try{const saved=JSON.parse(localStorage.getItem('namozSettings')||'{}');const merged={...JSON.parse(JSON.stringify(DEFAULTS)),...saved};['enabled','voice','manual','manualTimes','voiceNames'].forEach(k=>merged[k]={...DEFAULTS[k],...(saved[k]||{})});if(!Array.isArray(merged.tasbihItems)||!merged.tasbihItems.length)merged.tasbihItems=JSON.parse(JSON.stringify(DEFAULTS.tasbihItems));merged.tasbihIndex=Math.max(0,Math.min(Number(merged.tasbihIndex)||0,merged.tasbihItems.length-1));merged.tasbihCount=Math.max(0,Number(merged.tasbihCount)||0);merged.tasbihPreset=Math.max(0,Math.min(9,Number(merged.tasbihPreset)||0));return merged;}
   catch(_){return JSON.parse(JSON.stringify(DEFAULTS));}
 }
 function saveSettings(){const value=JSON.stringify(settings);localStorage.setItem('namozSettings',value);if(window.Android&&Android.saveAppSettings)Android.saveAppSettings(value);}
@@ -418,10 +532,10 @@ function hourAngle(latitude,declination,altitude){
   if(c<-1||c>1)return null;return Math.acos(c);
 }
 function localDateFromUtcHours(day,hours){
+  // hours is already UTC solar time. Date renders it in the phone's local timezone;
+  // do not add the timezone offset a second time.
   const utcMidnight=Date.UTC(day.getFullYear(),day.getMonth(),day.getDate());
-  const utcTime=utcMidnight+hours*3600000;
-  const offsetMinutes=-day.getTimezoneOffset();
-  return new Date(utcTime+offsetMinutes*60000);
+  return new Date(utcMidnight+hours*3600000);
 }
 function solarData(day,lat,lon){
   const jd=julianAtMidnight(day);
@@ -478,7 +592,6 @@ function renderHome(){
   let html='';
   for(const p of PRAYERS){const time=t[p.id];const isNext=next.p.id===p.id&&next.time.toDateString()===now.toDateString();html+=`<div class="prayer-card ${isNext?'next':''}"><div class="prayer-icon">${p.icon}</div><div class="prayer-info"><strong>${p.name}</strong><small>${p.description}</small>${isNext?'<span class="status-tag">KEYINGI NAMOZ</span>':''}</div><div class="prayer-time">${formatTime(time)}</div></div>`;}
   document.getElementById('prayerList').innerHTML=html;
-  document.getElementById('sunriseTime').textContent=formatTime(t.sunrise);
   updateCountdown(next.time);
   document.getElementById('masterAzan').checked=!!settings.masterAzan;
 }
@@ -499,7 +612,21 @@ function rotateNeedle(){
   document.getElementById('compassState').textContent='Qibla yo‘nalishi';
   document.getElementById('compassHint').textContent='Ka’ba belgisi Qibla tomonga qaraydi. Telefonni tekis tuting va metall buyumlardan uzoqroq turing.';
 }
-window.onCompassUpdate=function(degrees){magneticHeading=degrees;document.getElementById('phoneHeading').textContent=Math.round(degrees)+'°';rotateNeedle();};
+window.onCompassUpdate=function(degrees){
+  magneticHeading=degrees;
+  document.getElementById('phoneHeading').textContent=Math.round(degrees)+'°';
+  const relative=norm360(qiblaBearing-magneticHeading);
+  const delta=Math.min(relative,360-relative);
+  if(delta>9)qiblaAlignmentArmed=true;
+  if(delta<=4.5&&qiblaAlignmentArmed){
+    qiblaAlignmentArmed=false;
+    if(window.Android&&Android.playQiblaAlignedSound)Android.playQiblaAlignedSound();
+    else if(navigator.vibrate)navigator.vibrate([14,30,24]);
+    const compass=document.querySelector('.compass');
+    if(compass){compass.classList.remove('qibla-locked');void compass.offsetWidth;compass.classList.add('qibla-locked');}
+  }
+  rotateNeedle();
+};
 function nearestCityForCoordinates(lat,lon){let best=null,bestKm=Infinity;for(const city of CITIES){const dLat=rad(city.lat-lat),dLon=rad(city.lon-lon),a=Math.sin(dLat/2)**2+Math.cos(rad(lat))*Math.cos(rad(city.lat))*Math.sin(dLon/2)**2,km=6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));if(km<bestKm){bestKm=km;best=city;}}return bestKm<=45?best:null;}
 window.onNativeLocation=function(lat,lon){settings.lat=Number(lat);settings.lon=Number(lon);const nearest=nearestCityForCoordinates(settings.lat,settings.lon);settings.city=nearest?nearest.id:'gps';settings.cityName=nearest?nearest.name+' · GPS':'Mening joylashuvim';saveSettings();renderAll();showToast('Joylashuv aniqlandi');};
 window.onNativeLocationError=function(message){showToast(message);};
@@ -545,6 +672,28 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function requestNotifications(){if(window.Android&&Android.requestNotificationPermission)Android.requestNotificationPermission();else showToast('Bu ruxsat Android ilovasida so‘raladi');}
 function requestExactAlarm(){if(window.Android&&Android.requestExactAlarmPermission)Android.requestExactAlarmPermission();else showToast('Bu ruxsat Android ilovasida sozlanadi');}
 
+const TASBIH_PRESETS=[{"name":"Marjon","sub":"Iliq yog‘och zarbi","icon":"◉"},{"name":"Billur","sub":"Shaffof kristall","icon":"◇"},{"name":"Shabnam","sub":"Suv tomchisi ohangi","icon":"💧"},{"name":"Qanun","sub":"Torli cholg‘u aks-sadosi","icon":"♫"},{"name":"Sukun","sub":"Past va vazmin zarba","icon":"◌"},{"name":"Zang","sub":"Mayin qo‘ng‘iroq","icon":"♢"},{"name":"Bambuk","sub":"Tabiiy quruq taqillash","icon":"≋"},{"name":"Kumush","sub":"Yorqin metall ohang","icon":"✧"},{"name":"Shabada","sub":"Yengil havo nafasi","icon":"☾"},{"name":"Nafas","sub":"Sokin rezonans","icon":"❖"}];
+function renderTasbihPresets(){
+  const holder=document.getElementById('tasbihPresets');
+  const selected=Math.max(0,Math.min(9,Number(settings.tasbihPreset)||0));
+  document.getElementById('tasbihPresetCount').textContent=String(selected+1).padStart(2,'0')+' / 10';
+  holder.innerHTML=TASBIH_PRESETS.map((preset,index)=>
+    '<div class="tasbih-preset theme-card-'+index+' '+(index===selected?'selected':'')+'" onclick="selectTasbihPreset('+index+')">'+
+      '<span class="preset-icon">'+preset.icon+'</span>'+
+      '<span class="preset-copy"><strong>'+preset.name+'</strong><small>'+preset.sub+'</small></span>'+
+      '<button type="button" class="preset-preview" aria-label="Ovozni tinglash" onclick="event.stopPropagation();previewTasbihPreset('+index+')">▶</button>'+
+    '</div>'
+  ).join('');
+}
+function selectTasbihPreset(index){
+  if(!Number.isInteger(index)||index<0||index>=TASBIH_PRESETS.length)return;
+  settings.tasbihPreset=index;saveSettings();renderTasbih();showToast(TASBIH_PRESETS[index].name+' uslubi tanlandi');
+}
+function previewTasbihPreset(index){
+  if(!Number.isInteger(index)||index<0||index>=TASBIH_PRESETS.length)return;
+  if(window.Android&&Android.previewTasbihSound)Android.previewTasbihSound(index);
+  else playTasbihPreview(index);
+}
 function currentTasbihItem(){return settings.tasbihItems[settings.tasbihIndex]||settings.tasbihItems[0];}
 function renderTasbih(){
   const item=currentTasbihItem();if(!item)return;
@@ -559,8 +708,10 @@ function renderTasbih(){
   document.getElementById('tasbihVibration').checked=!!settings.tasbihVibration;
   const counter=document.getElementById('tasbihCounter');
   const beads=document.getElementById('tasbihBeads');
+  for(let i=0;i<10;i++)counter.classList.remove('theme-'+i);
+  counter.classList.add('theme-'+settings.tasbihPreset);
   counter.style.setProperty('--tasbih-progress',(progress*100).toFixed(2)+'%');
-  counter.style.borderColor=progress>=1?'#f6d88f':'#d6b66b66';
+  counter.style.borderColor=progress>=1?'#f6d88f':'';
   const finishedBeads=Math.round(progress*33);
   beads.innerHTML=Array.from({length:33},(_,i)=>{
     const angle=(Math.PI*2*i/33)-Math.PI/2;
@@ -571,6 +722,7 @@ function renderTasbih(){
   document.getElementById('zikrList').innerHTML=settings.tasbihItems.map((z,i)=>
     '<div class="zikr-item '+(i===settings.tasbihIndex?'active':'')+'"><div class="zikr-main" onclick="selectTasbih('+i+')"><strong>'+escapeHtml(z.name)+'</strong><small>'+(i===settings.tasbihIndex?'Hozirgi zikr':'Tanlash uchun bosing')+' · '+z.target+' marta</small></div><span class="zikr-count">'+(i===settings.tasbihIndex?settings.tasbihCount:0)+'/'+z.target+'</span>'+(z.custom?'<button class="btn danger" onclick="removeCustomZikr('+i+')" aria-label="Zikrni o‘chirish">×</button>':'')+'</div>'
   ).join('');
+  renderTasbihPresets();
 }
 function incrementTasbih(){const item=currentTasbihItem();if(!item||settings.tasbihCount>=item.target)return;settings.tasbihCount++;saveSettings();tasbihFeedback();renderTasbih();if(settings.tasbihCount===item.target)showToast(item.name+' — '+item.target+' marta yakunlandi');}
 function undoTasbih(){settings.tasbihCount=Math.max(0,settings.tasbihCount-1);saveSettings();renderTasbih();}
@@ -584,19 +736,37 @@ function removeCustomZikr(index){if(!settings.tasbihItems[index]||!settings.tasb
 function toggleTasbihSound(enabled){settings.tasbihSound=enabled;saveSettings();}
 function toggleTasbihVibration(enabled){settings.tasbihVibration=enabled;saveSettings();}
 let tasbihAudioContext=null;
-function playSoftBeadSound(){
+function playTasbihPreview(index){
   try{
     const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
     tasbihAudioContext=tasbihAudioContext||new C();
-    const ctx=tasbihAudioContext;if(ctx.state==='suspended')ctx.resume();
-    const now=ctx.currentTime;
-    const master=ctx.createGain();master.gain.setValueAtTime(.0001,now);master.gain.exponentialRampToValueAtTime(.12,now+.006);master.gain.exponentialRampToValueAtTime(.0001,now+.17);master.connect(ctx.destination);
-    const body=ctx.createOscillator(),bodyGain=ctx.createGain();body.type='triangle';body.frequency.setValueAtTime(390,now);body.frequency.exponentialRampToValueAtTime(285,now+.15);bodyGain.gain.setValueAtTime(.72,now);bodyGain.gain.exponentialRampToValueAtTime(.0001,now+.15);body.connect(bodyGain);bodyGain.connect(master);body.start(now);body.stop(now+.16);
-    const shimmer=ctx.createOscillator(),shimmerGain=ctx.createGain();shimmer.type='sine';shimmer.frequency.setValueAtTime(1180,now+.004);shimmer.frequency.exponentialRampToValueAtTime(760,now+.12);shimmerGain.gain.setValueAtTime(.18,now+.004);shimmerGain.gain.exponentialRampToValueAtTime(.0001,now+.13);shimmer.connect(shimmerGain);shimmerGain.connect(master);shimmer.start(now+.004);shimmer.stop(now+.14);
+    const c=tasbihAudioContext;if(c.state==='suspended')c.resume();
+    const now=c.currentTime,profiles=[
+      [265,530,1060,.35,.12,.035,29,.13,55],
+      [880,1320,1760,.18,.13,.08,17,.00,0],
+      [560,820,1420,.24,.12,.06,23,.07,180],
+      [420,840,1260,.25,.15,.08,14,.01,35],
+      [150,310,620,.42,.20,.05,39,.12,18],
+      [720,1060,1940,.21,.13,.07,12,.015,0],
+      [330,660,990,.33,.16,.08,23,.02,0],
+      [1050,1550,2100,.18,.12,.08,21,.00,0],
+      [480,720,960,.14,.10,.04,42,.16,0],
+      [240,480,960,.30,.13,.06,33,.04,0]
+    ];
+    const p=profiles[index]||profiles[0],master=c.createGain();
+    master.gain.setValueAtTime(.0001,now);master.gain.exponentialRampToValueAtTime(.11,now+.006);master.gain.exponentialRampToValueAtTime(.0001,now+.2);master.connect(c.destination);
+    [0,1,2].forEach((n)=>{
+      const osc=c.createOscillator(),gain=c.createGain();
+      osc.type='sine';osc.frequency.setValueAtTime(p[n],now);
+      if(n===0&&p[8])osc.frequency.linearRampToValueAtTime(Math.max(90,p[n]-p[8]),now+.18);
+      gain.gain.setValueAtTime(p[3+n],now);gain.gain.exponentialRampToValueAtTime(.0001,now+.18);
+      osc.connect(gain);gain.connect(master);osc.start(now);osc.stop(now+.19);
+    });
   }catch(_){}
 }
 function tasbihFeedback(){
-  if(settings.tasbihSound){if(window.Android&&Android.tasbihTick)Android.tasbihTick();else playSoftBeadSound();}
+  if(settings.tasbihSound&&window.Android&&Android.tasbihTick)Android.tasbihTick(Number(settings.tasbihPreset)||0);
+  else if(settings.tasbihSound)playTasbihPreview(Number(settings.tasbihPreset)||0);
   if(settings.tasbihVibration){if(window.Android&&Android.tasbihVibrate)Android.tasbihVibrate();else if(navigator.vibrate)navigator.vibrate([8,12,11]);}
   const counter=document.getElementById('tasbihCounter');
   if(counter){counter.classList.remove('pulse');void counter.offsetWidth;counter.classList.add('pulse');}
