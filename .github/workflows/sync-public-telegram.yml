@@ -47,7 +47,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_BRANCH: main
-          GITHUB_PATH: data/prayer-times.json
+          PRAYER_JSON_PATH: data/prayer-times.json
           TELEGRAM_CHANNEL_USERNAME: namozvaqti365
           CITY_ID: baliqchi
           CITY_NAME: Baliqchi tumani
