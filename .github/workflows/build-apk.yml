@@ -28,6 +28,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Restore stable debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: namoz-debug-signing-v1
+
       - name: Gradle 8.10.2
         uses: gradle/actions/setup-gradle@v4
         with:
