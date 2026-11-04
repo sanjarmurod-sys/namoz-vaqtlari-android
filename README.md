@@ -15,7 +15,9 @@ Baliqchi tumani uchun o‘zbek tilidagi namoz vaqtlari, azon eslatmalari, qibla 
 - Hisoblash usulini tanlash, Hanafi/standart Asr sozlamasi, joylashuv va qo‘lda vaqt tuzatish.
 - Har namoz uchun azon yoqish/o‘chirish, audio fayl tanlash va sinovdan o‘tkazish.
 - Premium Qibla kompassi: Ka’ba tasvirli yo‘nalish belgisi, telefon sensori va joylashuvdan foydalanadi.
-- 33 ta marjonli interaktiv tasbeh, progress halqasi, yumshoq sintezlangan sanash tovushi va vibratsiya.
+- 33 ta marjonli interaktiv tasbeh, 10 xil ovoz va 10 xil vizual uslub, ovozni oldindan tinglash va vibratsiya.
+- Qibla yo‘nalishi topilganda maxsus qisqa audio tasdiq.
+- Kattaroq shriftlar, qulay namoz kartochkalari va silliq animatsiyalar.
 - Ilova ichiga joylangan Manrope shrift oilasi — barcha sahifalarda internetga bog‘liq bo‘lmagan tipografika.
 - Namoz jadvalini internet orqali yangilash va mahalliy xotirada saqlash.
 
