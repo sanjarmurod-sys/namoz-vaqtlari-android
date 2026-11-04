@@ -64,43 +64,37 @@ def parse_week(text: str, today: date | None = None) -> tuple[date, date]:
 
 
 def read_times(image_bytes: bytes) -> tuple[list[str], str]:
-    """Read the table-style poster with one sparse-text OCR pass.
+    """Read a low-resolution weekly poster by OCR'ing date and numeric columns separately."""
+    original = Image.open(io.BytesIO(image_bytes)).convert("L")
 
-    PSM 11 separates the prayer names and times into columns. We merge words
-    on the same horizontal line, then keep only lines containing one valid time.
-    """
-    image = Image.open(io.BytesIO(image_bytes)).convert("L")
-    scale = max(4, min(8, 1800 // max(image.width, 1)))
-    image = image.resize((image.width * scale, image.height * scale), Image.Resampling.LANCZOS)
-    image = ImageOps.autocontrast(image)
-    image = ImageEnhance.Contrast(image).enhance(1.6)
-    image = image.filter(ImageFilter.UnsharpMask(radius=1, percent=150, threshold=2))
-
-    data = pytesseract.image_to_data(
-        image, lang="eng", config="--oem 1 --psm 11", output_type=Output.DICT
+    # Read the heading from the complete image so the week range can be validated.
+    heading = original.resize(
+        (original.width * 5, original.height * 5), Image.Resampling.LANCZOS
     )
-    words_by_y: list[dict] = []
-    for i, raw in enumerate(data["text"]):
-        token = (raw or "").strip()
-        try:
-            confidence = float(data["conf"][i])
-        except (TypeError, ValueError):
-            confidence = -1
-        if not token or confidence < 20:
-            continue
-        center_y = int(data["top"][i]) + int(data["height"][i]) // 2
-        row = next((item for item in words_by_y if abs(item["y"] - center_y) <= max(12, int(image.height * 0.025))), None)
-        if row is None:
-            row = {"y": center_y, "words": []}
-            words_by_y.append(row)
-        row["words"].append((int(data["left"][i]), token, confidence))
+    heading = ImageOps.autocontrast(heading)
+    heading_text = pytesseract.image_to_string(
+        heading, lang="eng", config="--oem 1 --psm 11"
+    )
 
-    words_by_y.sort(key=lambda item: item["y"])
-    ocr_lines: list[str] = []
+    # Prayer tables conventionally place times in the right-hand column.
+    # A digits-only whitelist avoids confusing Uzbek prayer names with numbers.
+    right_column = original.crop((int(original.width * 0.48), 0, original.width, original.height))
+    scale = max(6, min(10, 1800 // max(right_column.width, 1)))
+    right_column = right_column.resize(
+        (right_column.width * scale, right_column.height * scale), Image.Resampling.LANCZOS
+    )
+    right_column = ImageOps.autocontrast(right_column)
+    right_column = ImageEnhance.Contrast(right_column).enhance(1.7)
+    right_column = right_column.filter(ImageFilter.UnsharpMask(radius=1, percent=200, threshold=2))
+
+    numeric_text = pytesseract.image_to_string(
+        right_column,
+        lang="eng",
+        config="--oem 1 --psm 6 -c tessedit_char_whitelist=0123456789:.-",
+    )
+    ocr_lines = [line.strip() for line in numeric_text.splitlines() if line.strip()]
     times: list[str] = []
-    for row in words_by_y:
-        line = " ".join(word[1] for word in sorted(row["words"], key=lambda item: item[0]))
-        ocr_lines.append(line)
+    for line in ocr_lines:
         compact = re.sub(r"\s+", "", line)
         if DATE_RE.search(compact):
             continue
@@ -108,16 +102,17 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
         if len(matches) != 1:
             continue
         match = matches[0]
-        hour = int(match.group(1))
-        minute = int(match.group(2))
-        times.append(f"{hour:02d}:{minute:02d}")
+        times.append(f"{int(match.group(1)):02d}:{int(match.group(2)):02d}")
 
     if len(times) not in (5, 6):
-        raise ValueError(f"5 yoki 6 ta vaqt o‘qilmadi (topildi: {len(times)}): {' | '.join(ocr_lines[:12])}")
+        raise ValueError(
+            f"5 yoki 6 ta vaqt o‘qilmadi (topildi: {len(times)}): "
+            f"{' | '.join(ocr_lines[:12])}"
+        )
     minutes = [int(value[:2]) * 60 + int(value[3:]) for value in times]
     if any(later <= earlier for earlier, later in zip(minutes, minutes[1:])):
         raise ValueError("Vaqtlar ketma-ketligi shubhali.")
-    return times, "\n".join(ocr_lines)
+    return times, heading_text + "\n" + "\n".join(ocr_lines)
 
 
 def poster_photo(node) -> str | None:
