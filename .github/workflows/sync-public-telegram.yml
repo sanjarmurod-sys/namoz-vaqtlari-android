@@ -1,0 +1,49 @@
+name: Ommaviy Telegram jadvalini tekshirish
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: public-telegram-prayer-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Kodni olish
+        uses: actions/checkout@v4
+
+      - name: Python 3.12 ni sozlash
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Tesseract OCR o‘rnatish
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr
+
+      - name: Python kutubxonalarini o‘rnatish
+        run: python -m pip install --upgrade requests beautifulsoup4 Pillow pytesseract
+
+      - name: OCR parser testlarini ishlatish
+        run: python -m unittest discover -s telegram_sync/tests -p 'test_*.py' -v
+
+      - name: Ommaviy kanalni tekshirish va jadvalni yangilash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_BRANCH: main
+          GITHUB_PATH: data/prayer-times.json
+          TELEGRAM_CHANNEL_USERNAME: namozvaqti365
+          CITY_ID: baliqchi
+          CITY_NAME: Baliqchi tumani
+          TIMEZONE: Asia/Tashkent
+        run: python telegram_sync/public_channel_sync.py
