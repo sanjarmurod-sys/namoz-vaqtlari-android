@@ -367,22 +367,26 @@ class MainActivity : Activity(), SensorEventListener {
         @JavascriptInterface fun tasbihTick() {
             runOnUiThread {
                 try {
-                    // A short, warm wooden-bead tap with a soft glass-like overtone.
-                    // The two decaying partials are synthesized locally; no audio file or network is needed.
+                    // A muted wooden-bead touch: a filtered noise transient plus two warm resonances.
+                    // Entirely synthesized on-device; it is not a system beep or an audio-file sample.
                     val sampleRate = 44_100
-                    val durationSeconds = 0.19
+                    val durationSeconds = 0.17
                     val sampleCount = (sampleRate * durationSeconds).toInt()
                     val samples = ShortArray(sampleCount)
+                    val random = kotlin.random.Random.Default
+                    var filteredNoise = 0.0
                     for (i in 0 until sampleCount) {
                         val t = i.toDouble() / sampleRate
-                        val bodyEnvelope = kotlin.math.exp(-t * 25.0)
-                        val shimmerEnvelope = kotlin.math.exp(-t * 34.0)
-                        val bodyPhase = 2.0 * Math.PI * (390.0 * t - 105.0 * t * t)
-                        val shimmerPhase = 2.0 * Math.PI * (1_180.0 * t - 1_500.0 * t * t)
-                        val body = kotlin.math.sin(bodyPhase) * bodyEnvelope * 0.42
-                        val shimmer = kotlin.math.sin(shimmerPhase) * shimmerEnvelope * 0.11
-                        val softAttack = (1.0 - kotlin.math.exp(-t * 900.0))
-                        samples[i] = ((body + shimmer) * softAttack * Short.MAX_VALUE)
+                        val whiteNoise = random.nextDouble(-1.0, 1.0)
+                        filteredNoise += 0.12 * (whiteNoise - filteredNoise)
+                        val transient = filteredNoise * kotlin.math.exp(-t * 92.0) * 0.24
+                        val woodBody = kotlin.math.sin(2.0 * Math.PI * (265.0 * t - 62.0 * t * t)) *
+                            kotlin.math.exp(-t * 31.0) * 0.36
+                        val softResonance = kotlin.math.sin(2.0 * Math.PI * 565.0 * t) *
+                            kotlin.math.exp(-t * 46.0) * 0.075
+                        val softAttack = 1.0 - kotlin.math.exp(-t * 1_200.0)
+                        val sample = (transient + woodBody + softResonance) * softAttack
+                        samples[i] = (sample * Short.MAX_VALUE)
                             .toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
                     }
 
