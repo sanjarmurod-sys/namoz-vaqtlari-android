@@ -43,10 +43,10 @@ data/prayer-times.json ilovaga quyidagi ma'lumotni beradi:
 - [x] Boshlang‘ich haftalik jadval JSON’ga yozilgan.
 - [x] Hudud Andijon deb emas, Baliqchi tumani deb belgilangan.
 - [x] Kanal adminligi talab qilinmaydigan ommaviy web-preview usuli tanlangan.
-- [ ] Web-preview sahifasini o‘qish, yangi postni aniqlash va rasmni OCR qilish ishchi skriptini joylash.
-- [ ] GitHub Contents API orqali JSON’ni yangilashni ulash.
-- [ ] Jadval xatolik/ambiguitet holatida eski qiymatlarni saqlash testlari.
+- [x] Ommaviy web-preview sahifasini tekshiradigan va jadval rasmini OCR bilan o‘qiydigan Python skripti joylandi (`telegram_sync/public_channel_sync.py`).
+- [x] GitHub Contents API orqali JSON yangilash kodi qo‘shildi; GitHub Actions tokenidan foydalanadi.
+- [x] Sana/vaqt tekshiruvlari, eski jadvalni himoyalash va parser uchun boshlang‘ich testlar qo‘shildi.
 - [ ] Android Kotlin/WebView manba kodini ushbu repository’ga to‘liq joylash.
 - [ ] GitHub Actions orqali APK yig‘ish va natijani tekshirish.
 
-**Muhim:** Telegram’dan avtomatik yangilash hali ishga tushmagan. Hozir repository’da boshlang‘ich JSON va ushbu qo‘llanma bor; Android manba fayllari to‘liq joylanmagan, APK ham yig‘ilmagan.
+**Muhim holat:** ommaviy Telegram preview scraperi, OCR parseri, testlar va GitHub Actions workflow joylandi. Workflow GitHub’da sinovdan o‘tkazilmoqda; Telegram preview’ni amalda yuklash muvaffaqiyatli tasdiqlanmaguncha avtomatik yangilanish ishlayapti deb hisoblamang. Android Kotlin/WebView manba fayllari hali ushbu repository’ga to‘liq joylanmagan va APK hali yig‘ilmagan.
