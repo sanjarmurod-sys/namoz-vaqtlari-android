@@ -90,7 +90,7 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
                 rows.append(group)
             text = " ".join(t[1] for t in sorted(tokens))
             ocr_lines.append(text)
-            compact_text = re.sub(r"\\s+", "", text)
+            compact_text = re.sub(r"\s+", "", text)
             if DATE_RE.search(compact_text):
                 continue
             matches = list(TIME_RE.finditer(text))
@@ -112,7 +112,7 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
     mins = [int(v[:2])*60+int(v[3:]) for v in values]
     if any(b <= a for a,b in zip(mins, mins[1:])):
         raise ValueError("Vaqtlar ketma-ketligi shubhali.")
-    return values, "\\n".join(ocr_lines)
+    return values, "\n".join(ocr_lines)
 
 
 def poster_photo(node) -> str | None:
