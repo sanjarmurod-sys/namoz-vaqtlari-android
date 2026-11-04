@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#06251a">
+<title>Namoz Vaqtlari</title>
+<style>
+:root{--bg:#090d14;--panel:#111925;--panel2:#151f2d;--line:rgba(214,182,107,.17);--gold:#d6b66b;--gold2:#f0d99d;--text:#f5f2e9;--muted:#9aa5b3;--green:#94c6a2;--danger:#d88989;--radius:22px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg);scroll-behavior:smooth}
+body{margin:0;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 85% -8%,rgba(100,83,48,.22),transparent 37%),radial-gradient(ellipse at -15% 30%,rgba(29,54,71,.22),transparent 38%),var(--bg);min-height:100vh;padding-bottom:92px}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{max-width:720px;margin:0 auto;padding:20px 16px 30px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin:7px 2px 24px}
+.brand{display:flex;align-items:center;gap:11px}.brand-mark{width:43px;height:43px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(145deg,#24251f,#101722);border:1px solid var(--line);box-shadow:0 7px 24px #0005}.brand-mark svg{width:25px;height:25px;fill:var(--gold)}
+.brand h1{font-size:16px;letter-spacing:1.5px;margin:0;font-weight:800}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:2.2px;margin-top:3px}
+.icon-btn{width:42px;height:42px;border:1px solid var(--line);border-radius:14px;color:var(--gold);background:#141d29;display:grid;place-items:center;font-size:18px}
+.page{display:none;animation:rise .25s ease}.page.active{display:block}@keyframes rise{from{opacity:.3;transform:translateY(5px)}to{opacity:1;transform:none}}
+.hero{position:relative;overflow:hidden;padding:22px 21px 20px;border:1px solid rgba(214,182,107,.24);border-radius:26px;background:linear-gradient(135deg,rgba(31,39,47,.98),rgba(14,22,32,.98));box-shadow:0 18px 42px #0004}
+.hero:after{content:"";position:absolute;width:210px;height:210px;border:1px solid rgba(214,182,107,.10);border-radius:50%;right:-105px;top:-105px;box-shadow:0 0 0 18px rgba(214,182,107,.025),0 0 0 38px rgba(214,182,107,.02)}
+.hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative;z-index:1}.location-pill{display:inline-flex;align-items:center;gap:7px;color:var(--gold2);font-size:12px;background:#d6b66b12;border:1px solid #d6b66b30;border-radius:30px;padding:8px 11px;max-width:78%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.location-pill span{overflow:hidden;text-overflow:ellipsis}
+.date{color:var(--muted);font-size:12px}.clock{font-size:44px;font-weight:700;letter-spacing:-1.8px;margin:20px 0 2px;font-variant-numeric:tabular-nums;position:relative;z-index:1}.greeting{font-size:12px;color:#c5cbd2;margin:0;position:relative;z-index:1}
+.next-prayer{margin-top:21px;padding-top:17px;border-top:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative;z-index:1}.next-prayer .label{font-size:11px;color:var(--muted);margin-bottom:5px}.next-prayer strong{font-size:17px;color:var(--gold2)}.countdown{text-align:right;font-size:23px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}.countdown small{display:block;font-size:10px;color:var(--muted);font-weight:500;margin-top:3px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin:26px 2px 13px}.section-head h2{font-size:15px;margin:0;font-weight:750}.section-head span{font-size:11px;color:var(--muted)}
+.prayer-list{display:grid;gap:9px}.prayer-card{display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:18px;background:linear-gradient(120deg,#141e2a,#101823);border:1px solid rgba(255,255,255,.055);min-height:72px}.prayer-card.next{border-color:rgba(214,182,107,.52);background:linear-gradient(120deg,#28271f,#151e27);box-shadow:inset 0 0 0 1px rgba(214,182,107,.06)}
+.prayer-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;background:#d6b66b12;color:var(--gold);border-radius:14px;font-size:19px}.prayer-info{flex:1;min-width:0}.prayer-info strong{font-size:14px;display:block}.prayer-info small{font-size:10px;color:var(--muted);display:block;margin-top:4px}.prayer-time{font-variant-numeric:tabular-nums;font-size:20px;font-weight:700;letter-spacing:.3px}.prayer-card.next .prayer-time{color:var(--gold2)}.status-tag{font-size:9px;display:inline-block;margin-top:4px;color:var(--gold);letter-spacing:.3px}
+.sunrise{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:12px 15px;border:1px dashed rgba(214,182,107,.23);border-radius:16px;color:var(--muted);font-size:12px}.sunrise strong{font-size:15px;color:var(--text);font-variant-numeric:tabular-nums}
+.note{font-size:10px;color:#82909f;line-height:1.6;margin:15px 4px 0}
+.card{background:linear-gradient(145deg,#141e2a,#101722);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);padding:18px;margin-bottom:13px}.card h3{font-size:14px;margin:0 0 7px}.card p{font-size:11px;color:var(--muted);line-height:1.6;margin:0}
+.field{display:grid;gap:7px;margin-top:15px}.field label,.field-label{font-size:11px;color:#c5cbd2}.field select,.field input[type=text],.field input[type=number],.field input[type=time]{width:100%;border:1px solid rgba(214,182,107,.2);background:#0b121c;color:var(--text);border-radius:13px;padding:12px 13px;outline:none}.field select:focus,.field input:focus{border-color:var(--gold)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:13px;padding:11px 14px;color:var(--gold2);background:#d6b66b10;font-size:11px;font-weight:700}.btn.primary{background:linear-gradient(135deg,#d9bc78,#b8944c);color:#14120e;border:0}.btn.ghost{background:#111b27;color:#dce2e8;border-color:#ffffff12}.btn.danger{color:#e6aaaa;border-color:#8a4a4a55;background:#8a4a4a17}.btn.full{width:100%;margin-top:12px}.helper{font-size:10px;color:#8491a0;line-height:1.6;margin-top:9px}
+.switch-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}.switch-row:last-child{border-bottom:0}.switch-row strong{font-size:12px;font-weight:650;display:block}.switch-row small{font-size:10px;color:var(--muted);display:block;margin-top:4px}.switch{appearance:none;width:42px;height:24px;border-radius:20px;background:#354151;position:relative;flex:none;transition:.2s}.switch:before{content:"";width:18px;height:18px;background:#c5ccd4;position:absolute;top:3px;left:3px;border-radius:50%;transition:.2s}.switch:checked{background:#a98c4f}.switch:checked:before{left:21px;background:#fff}
+.manual-row{display:grid;grid-template-columns:1.1fr .9fr auto;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid #ffffff0d}.manual-row:last-child{border-bottom:0}.manual-row strong{font-size:12px}.manual-row small{display:block;color:var(--muted);font-size:9px;margin-top:3px}.manual-row input[type=time]{min-width:0;width:100%;padding:9px 6px;text-align:center;font-size:12px;border-radius:10px;background:#0b121c;color:var(--text);border:1px solid #d6b66b33}.mini-check{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);white-space:nowrap}.mini-check input{accent-color:var(--gold)}
+.voice-slot{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid #ffffff0d}.voice-slot:last-child{border-bottom:0}.voice-slot strong{font-size:12px}.voice-slot small{display:block;font-size:9px;color:var(--muted);margin-top:4px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.voice-actions{display:flex;gap:6px}.voice-actions .btn{padding:8px 10px;font-size:10px}
+.prayer-voice{display:grid;grid-template-columns:1fr 90px 65px;align-items:center;gap:7px;padding:10px 0;border-bottom:1px solid #ffffff0d}.prayer-voice:last-child{border:0}.prayer-voice strong{font-size:11px}.prayer-voice select{background:#0b121c;color:var(--text);border:1px solid #ffffff1a;border-radius:9px;padding:8px 4px;font-size:10px;min-width:0}.prayer-voice .switch{transform:scale(.85);transform-origin:right center}
+.compass-wrap{display:grid;place-items:center;padding:24px 0 16px}.compass{width:min(78vw,300px);height:min(78vw,300px);max-width:300px;max-height:300px;border-radius:50%;position:relative;background:radial-gradient(circle at 50% 45%,#1b2937,#0b111b 67%);border:1px solid #d6b66b55;box-shadow:0 0 0 8px #d6b66b0a,0 15px 40px #0007,inset 0 0 30px #0008}.compass:before,.compass:after{content:"";position:absolute;background:#ffffff10}.compass:before{width:1px;top:11%;bottom:11%;left:50%}.compass:after{height:1px;left:11%;right:11%;top:50%}.direction{position:absolute;inset:0;display:flex;justify-content:center;align-items:flex-start;padding-top:13px;font-size:12px;font-weight:800;color:var(--gold)}.direction.s{align-items:flex-end;padding:0 0 13px;color:#a8b2bf}.direction.e,.direction.w{align-items:center;padding:0;justify-content:flex-end;right:14px;left:auto;color:#a8b2bf}.direction.w{justify-content:flex-start;left:14px;right:auto}.needle{position:absolute;inset:0;display:grid;place-items:center;transition:transform .15s linear}.needle-shape{width:20px;height:210px;position:relative}.needle-shape:before{content:"";position:absolute;left:4px;top:3px;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:96px solid var(--gold2);filter:drop-shadow(0 2px 5px #0008)}.needle-shape:after{content:"";position:absolute;left:4px;bottom:3px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:96px solid #74869a}.compass-center{position:absolute;width:23px;height:23px;border-radius:50%;background:var(--gold);border:5px solid #202a35;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;box-shadow:0 0 0 2px #d6b66b66}.qibla-info{display:grid;grid-template-columns:1fr 1fr;gap:10px}.qibla-stat{background:#ffffff07;border:1px solid #ffffff0d;border-radius:15px;padding:13px;text-align:center}.qibla-stat small{display:block;color:var(--muted);font-size:10px}.qibla-stat strong{display:block;color:var(--gold2);font-size:20px;margin-top:5px;font-variant-numeric:tabular-nums}.compass-hint{margin:15px 4px 0;text-align:center;color:var(--muted);font-size:10px;line-height:1.7}
+.bottom-nav{position:fixed;z-index:20;bottom:0;left:0;right:0;display:flex;justify-content:center;padding:9px 10px calc(9px + env(safe-area-inset-bottom));background:rgba(9,13,20,.94);backdrop-filter:blur(18px);border-top:1px solid #ffffff12}.nav-inner{width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.nav-item{border:0;background:transparent;color:#758294;border-radius:13px;padding:8px 5px 5px;font-size:9px;display:grid;justify-items:center;gap:4px}.nav-item span{font-size:19px}.nav-item.active{color:var(--gold2);background:#d6b66b12}
+.toast{position:fixed;z-index:40;left:50%;bottom:90px;transform:translate(-50%,12px);opacity:0;pointer-events:none;background:#e6d09b;color:#17130b;padding:11px 15px;border-radius:13px;font-size:11px;font-weight:700;box-shadow:0 8px 24px #0008;transition:.25s;max-width:90%;text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}
+.subheading{font-size:13px;font-weight:750;margin:23px 3px 11px}.muted-label{font-size:10px;color:var(--muted)}.divider{height:1px;background:#ffffff0d;margin:15px 0}.footer{text-align:center;color:#667486;font-size:9px;line-height:1.7;margin:23px 0 6px}
+@media(min-width:600px){.app{padding:28px 24px 36px}.clock{font-size:51px}.prayer-list{grid-template-columns:1fr 1fr}.prayer-card{min-height:78px}.hero{padding:27px}.bottom-nav{padding-top:10px}}
+
+.tasbih-wrap{display:grid;place-items:center;padding:14px 0 18px}
+.tasbih-counter{width:min(74vw,270px);height:min(74vw,270px);border-radius:50%;border:1px solid #d6b66b66;background:radial-gradient(circle at 50% 40%,#26372f,#0c1715 68%);box-shadow:0 0 0 9px #d6b66b0a,0 18px 42px #0007,inset 0 0 32px #0009;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;cursor:pointer;user-select:none;outline:none}
+.tasbih-counter:active{transform:scale(.985)}
+.tasbih-count{font-size:48px;font-weight:800;line-height:1.1;color:var(--gold2);font-variant-numeric:tabular-nums}
+.tasbih-target{font-size:13px;color:#aab5b1;margin-top:6px}
+.tasbih-current{font-size:14px;font-weight:700;margin-top:13px;text-align:center;max-width:80%;overflow-wrap:anywhere}
+.tasbih-ring{position:absolute;inset:10px;border-radius:50%;border:2px dashed #d6b66b22;pointer-events:none}
+.tasbih-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.tasbih-main{width:76px;height:76px;border:0;border-radius:50%;background:linear-gradient(145deg,#f4d990,#b58c43);color:#1a160e;font-size:33px;font-weight:800;box-shadow:0 9px 26px #d6b66b2b}
+.tasbih-action{min-height:48px}
+.zikr-list{display:grid;gap:8px;margin-top:13px}.custom-zikr-form{display:none;gap:9px;padding:12px;margin-top:12px;border:1px solid #d6b66b33;border-radius:15px;background:#d6b66b09}.custom-zikr-form.open{display:grid}.custom-zikr-form input{width:100%;background:#0b121c;color:var(--text);border:1px solid #d6b66b33;border-radius:11px;padding:11px;font-size:12px}
+.zikr-item{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;border:1px solid #ffffff12;background:#ffffff05}
+.zikr-item.active{border-color:#d6b66b88;background:#d6b66b12}
+.zikr-item .zikr-main{flex:1;min-width:0}
+.zikr-item strong{font-size:12px;display:block}
+.zikr-item small{font-size:10px;color:var(--muted);display:block;margin-top:3px}
+.zikr-item .zikr-count{color:var(--gold2);font-size:14px;font-weight:800}
+.sync-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid #d6b66b35;border-radius:20px;padding:7px 10px;font-size:10px;color:var(--gold2);background:#d6b66b0d}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#9bc99f;box-shadow:0 0 0 3px #9bc99f20}
+
+/* Premium emerald + antique gold visual system */
+:root{--bg:#04150f;--panel:#082219;--panel2:#0b2b20;--line:rgba(218,177,92,.28);--gold:#e0b75f;--gold2:#ffdf91;--text:#f7f3e9;--muted:#a5b8ad;--green:#52d18d;--danger:#e39b91;--radius:20px}
+html{background:#04150f}
+body{background:radial-gradient(ellipse at 50% -8%,rgba(16,107,71,.27),transparent 48%),radial-gradient(ellipse at 100% 35%,rgba(13,76,50,.19),transparent 40%),linear-gradient(180deg,#061d15,#03120d 72%);color:var(--text)}
+.app{max-width:560px;padding:16px 14px 28px}
+.topbar{margin:2px 2px 18px}
+.brand-mark{background:linear-gradient(145deg,#0d5138,#062319);border-color:#d9b66c66;box-shadow:0 7px 25px #0007,0 0 20px #c4933b17}
+.brand h1{letter-spacing:1.15px;font-size:15px}.brand small{color:#c6ad75;letter-spacing:1.7px}
+.icon-btn{background:linear-gradient(145deg,#0b3425,#071b14);border-color:#d9b66c55;color:var(--gold2)}
+.hero{padding:19px 17px 17px;border-radius:23px;border:1px solid #d9b66c66;background:linear-gradient(180deg,rgba(3,25,17,.16) 0%,rgba(3,22,15,.42) 47%,rgba(3,16,11,.97) 100%),url('mosque-hero.svg') center 47%/cover no-repeat;box-shadow:0 18px 44px #0008,inset 0 0 40px #03130d66;min-height:258px}
+.hero:after{width:170px;height:170px;right:-100px;top:-105px;border-color:#efd18a33;box-shadow:0 0 0 16px #efd18a0c,0 0 0 34px #efd18a08}
+.hero-top{align-items:flex-start}.location-pill{background:#031b13cc;border-color:#d9b66c66;color:#ffdf91;backdrop-filter:blur(8px);padding:8px 11px}.date{color:#e2d6bd;text-align:right;font-size:11px}
+.clock{font-size:40px;letter-spacing:-1.5px;margin:17px 0 0;color:#ffdc85;text-shadow:0 3px 18px #000b}.greeting{font-size:11px;color:#efe6d4}
+.next-prayer{margin-top:20px;padding:13px 14px;border:1px solid #8ed2a455;border-radius:15px;background:linear-gradient(120deg,#063d2aee,#05281dcc);box-shadow:0 8px 25px #0004}.next-prayer .label{color:#bfd0c5}.next-prayer strong{color:#ffdf91;font-size:16px}.countdown{color:#ffdc85;font-size:22px}.countdown small{color:#c6d3cb}
+.section-head{margin:23px 2px 11px}.section-head h2{font-size:14px;letter-spacing:.1px}.section-head span{color:#b7c5b9;font-size:10px}
+.prayer-list{gap:7px}.prayer-card{min-height:63px;padding:10px 12px;border-radius:15px;gap:11px;background:linear-gradient(115deg,#0b2b20,#071b14);border:1px solid #c4a45e29;box-shadow:0 5px 16px #0002}.prayer-card.next{background:linear-gradient(110deg,#075639,#06402b);border-color:#d8b25e;box-shadow:inset 0 0 0 1px #d8b25e2c,0 7px 20px #0004}.prayer-icon{width:36px;height:36px;border-radius:12px;background:#d9b66c18;color:#f0cb76;font-size:18px}.prayer-info strong{font-size:13px}.prayer-info small{font-size:9px;color:#a8b8ad}.prayer-time{font-size:18px}.status-tag{color:#ffdd88;font-size:8px}
+.sunrise{margin-top:8px;padding:10px 13px;border:1px solid #d7b76b39;border-radius:14px;background:#082319;color:#c5d1c7}.sunrise strong{color:#ffdf91}
+.note{color:#879e91;font-size:9px}
+.card{background:linear-gradient(145deg,#0b2b20,#061a13);border:1px solid #d6b66b32;border-radius:19px;padding:16px;box-shadow:0 12px 30px #0003}.card h3{color:#f6d990;font-size:13px}.card p{font-size:10px;color:#afc0b4}
+.field label,.field-label{color:#d8d0bb}.field select,.field input[type=text],.field input[type=number],.field input[type=time],.manual-row input[type=time],.prayer-voice select,.custom-zikr-form input{background:#04170f;color:var(--text);border-color:#cda95d55;border-radius:12px}
+.btn{border-radius:12px;border-color:#d9b66c64;background:#d9b66c14;color:#ffe1a0;font-size:10px}.btn.primary{background:linear-gradient(135deg,#ffdf8e,#c28c33);color:#241907;box-shadow:0 6px 17px #bb873328}.btn.ghost{background:#09271c;color:#e6eee7;border-color:#c3a45b42}.btn.danger{color:#f0aaa0}
+.switch-row{border-bottom-color:#d7c18a1c}.switch-row strong{font-size:11px;color:#f2ead9}.switch-row small{color:#a6b9ac}.switch:checked{background:#25b96b}.switch:checked:before{background:#f7fff8}
+.manual-row,.voice-slot,.prayer-voice{border-bottom-color:#d7c18a25}.manual-row strong,.voice-slot strong,.prayer-voice strong{color:#f3ead8}
+.compass-wrap{padding:22px 0 16px}.compass{background:repeating-conic-gradient(from 0deg,#e7c16a15 0deg 1deg,transparent 1deg 7.5deg),radial-gradient(circle at 50% 45%,#0d5639,#052117 68%);border:2px solid #e1bc67;box-shadow:0 0 0 6px #d6b66b10,0 0 0 12px #d6b66b12,0 15px 40px #0009,inset 0 0 28px #0008}
+.compass:before{inset:9px;width:auto;top:9px;bottom:9px;left:9px;border:1px dashed #e5c67970;border-radius:50%;background:transparent}
+.compass:after{inset:19px;height:auto;left:19px;right:19px;top:19px;border:1px solid #e5c6794c;border-radius:50%;background:transparent}
+.direction{color:#ffe09a}.direction.s,.direction.e,.direction.w{color:#c4d1c7}.needle-shape:before{border-bottom-color:#fbe3a5;filter:drop-shadow(0 2px 7px #e3b75566)}.needle-shape:after{border-top-color:#327b5c}.compass-center{background:#f0c76e;border-color:#0d3d2a;box-shadow:0 0 0 2px #efd18a80,0 0 16px #e5bd5a66}
+.qibla-stat{background:#073021;border-color:#d9b66c42}.qibla-stat strong{color:#ffdf91}.compass-hint{color:#b2c2b7}
+.bottom-nav{background:rgba(3,20,14,.96);border-top:1px solid #d7b76b35;box-shadow:0 -8px 26px #0005;padding-top:8px}.nav-inner{max-width:560px;gap:4px}.nav-item{color:#8ca194;border-radius:13px;padding:8px 4px 6px;font-size:9px}.nav-item span{font-size:18px}.nav-item.active{color:#ffe09a;background:linear-gradient(180deg,#0b5338,#08301f);box-shadow:inset 0 0 0 1px #d9b66c45}
+.toast{background:#ffdf91;color:#211705}
+.tasbih-counter{background:radial-gradient(circle at 50% 40%,#12603f,#052217 68%);border:1px solid #f0cc78;box-shadow:0 0 0 7px #d6b66b12,0 0 0 14px #d6b66b08,0 18px 42px #0008,inset 0 0 32px #0009}
+.tasbih-ring{inset:5px;border:0;background:repeating-conic-gradient(from -3deg,#f7d98e 0deg 1.5deg,#a9752e 1.5deg 2.5deg,transparent 2.5deg 10.9deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 11px),#000 calc(100% - 10px));mask:radial-gradient(farthest-side,transparent calc(100% - 11px),#000 calc(100% - 10px));opacity:.9}
+.tasbih-count{color:#ffe09a;text-shadow:0 2px 18px #efc66c38}.tasbih-target{color:#c6d4ca}.tasbih-current{color:#fff4da}.tasbih-main{background:linear-gradient(145deg,#ffe6a0,#c48c34);color:#251a07;box-shadow:0 9px 26px #d6b66b44,inset 0 1px 1px #fff8}
+.sync-pill{border-color:#d9b66c66;background:#d9b66c12;color:#ffdf91}.sync-dot{background:#42d98a;box-shadow:0 0 0 3px #42d98a24}
+.zikr-item{background:#08271c;border-color:#d7b76b32}.zikr-item.active{background:#0b5638;border-color:#f0cf7c}.zikr-item .zikr-count{color:#ffdf91}
+.helper,.muted-label{color:#a0b3a7}.divider{background:#d7c18a25}
+@media(min-width:600px){.app{padding:22px 22px 34px}.hero{min-height:280px}.clock{font-size:46px}}
+@media(max-width:360px){.app{padding-left:10px;padding-right:10px}.hero{padding:16px 13px}.clock{font-size:36px}.prayer-card{padding:9px}.prayer-time{font-size:16px}.manual-row{grid-template-columns:1fr .85fr auto;gap:5px}.manual-row input[type=time]{font-size:11px}}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M15.7 2.5A9.4 9.4 0 1 0 21.5 16 8.4 8.4 0 0 1 15.7 2.5ZM12 4.5l1.1 3.2 3.2 1.1-3.2 1.1-1.1 3.2-1.1-3.2-3.2-1.1 3.2-1.1L12 4.5Z"/></svg></div>
+      <div><h1>NAMOZ VAQTLARI</h1><small>IBODAT VAQTINGIZ</small></div>
+    </div>
+    <button class="icon-btn" onclick="showPage('settings')" aria-label="Sozlamalar">⚙</button>
+  </header>
+
+  <main id="homePage" class="page active">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="location-pill">⌖ <span id="heroCity">Toshkent</span></div>
+        <div class="date" id="todayDate">—</div>
+      </div>
+      <div class="clock" id="clock">--:--:--</div>
+      <p class="greeting">Alloh ibodatlaringizni qabul qilsin.</p>
+      <div class="next-prayer">
+        <div><div class="label">KEYINGI NAMOZ</div><strong id="nextName">Hisoblanmoqda…</strong></div>
+        <div class="countdown" id="countdown">--:--:--<small>qolgan vaqt</small></div>
+      </div>
+    </section>
+
+    <div class="section-head"><h2>Bugungi namoz vaqtlari</h2><span id="calculationLabel">Hisoblangan vaqtlar</span></div>
+    <div class="prayer-list" id="prayerList"></div>
+    <div class="sunrise"><span>☀ Quyosh chiqishi</span><strong id="sunriseTime">--:--</strong></div>
+    <p class="note">Namoz vaqtlari tanlangan hisoblash usuli va telefoningiz sanasi hamda vaqt mintaqasiga asoslanadi. Mahalliy masjid taqvimi bilan solishtirib tekshiring.</p>
+
+    <div class="section-head"><h2>Tezkor sozlamalar</h2><span>Bir zumda boshqarish</span></div>
+    <div class="card">
+      <div class="switch-row"><div><strong>Azon xabarnomalari</strong><small>Namoz vaqti kelganda ovoz va xabar</small></div><input id="masterAzan" class="switch" type="checkbox" onchange="setMasterAzan(this.checked)"></div>
+      <div class="row2" style="margin-top:13px"><button class="btn" onclick="showPage('qibla')">⌖ Qiblani aniqlash</button><button class="btn" onclick="showPage('settings')">⚙ Vaqtlarni sozlash</button></div>
+    </div>
+  </main>
+
+  <main id="qiblaPage" class="page">
+    <div class="section-head" style="margin-top:2px"><h2>Qibla kompassi</h2><span id="compassState">Sensor kutilmoqda</span></div>
+    <div class="card">
+      <div class="compass-wrap">
+        <div class="compass">
+          <div class="direction">SH</div><div class="direction s">J</div><div class="direction e">SHQ</div><div class="direction w">G‘</div>
+          <div class="needle" id="compassNeedle"><div class="needle-shape"></div></div>
+          <div class="compass-center"></div>
+        </div>
+      </div>
+      <div class="qibla-info">
+        <div class="qibla-stat"><small>Qibla yo‘nalishi</small><strong id="qiblaBearing">—°</strong></div>
+        <div class="qibla-stat"><small>Telefon yo‘nalishi</small><strong id="phoneHeading">—°</strong></div>
+      </div>
+      <p class="compass-hint" id="compassHint">Telefonni tekis tuting. Kompasni kalibrlash uchun telefonni havoda sakkiz shaklida bir necha marta aylantiring.</p>
+    </div>
+    <div class="card">
+      <h3>Qibla haqida</h3>
+      <p>Kompas Ka’ba joylashgan Makka tomonga eng qisqa geografik yo‘nalishni ko‘rsatadi. Metall buyumlar, magnitli g‘ilof va elektron qurilmalar kompas aniqligiga ta’sir qilishi mumkin.</p>
+      <button class="btn full" onclick="showPage('settings')">Joylashuvni tekshirish</button>
+    </div>
+  </main>
+
+  <main id="tasbihPage" class="page">
+    <div class="section-head" style="margin-top:2px"><h2>Elektron tasbeh</h2><span id="tasbihProgressLabel">1 / 3</span></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="sync-pill">✦ Standart zikrlar</span><span class="muted-label" id="tasbihSetLabel">33 tadan</span></div>
+      <div class="tasbih-wrap">
+        <button class="tasbih-counter" id="tasbihCounter" onclick="incrementTasbih()" aria-label="Tasbeh sanash">
+          <span class="tasbih-ring"></span><span class="tasbih-count" id="tasbihCount">0</span><span class="tasbih-target" id="tasbihTarget">/ 33</span><span class="tasbih-current" id="tasbihCurrent">Subhanalloh</span>
+        </button>
+      </div>
+      <div style="display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap">
+        <button class="btn ghost" onclick="undoTasbih()">↶ Ortga</button>
+        <button class="tasbih-main" onclick="incrementTasbih()" aria-label="Bitta sanash">+</button>
+        <button class="btn ghost" onclick="resetTasbihCount()">↻ Qayta</button>
+      </div>
+      <div class="tasbih-actions">
+        <button class="btn tasbih-action" onclick="previousTasbih()">‹ Oldingi</button>
+        <button class="btn primary tasbih-action" onclick="nextTasbih()">Keyingisi ›</button>
+        <button class="btn tasbih-action" onclick="toggleCustomZikrForm()">＋ Zikr</button>
+      </div>
+      <div class="custom-zikr-form" id="customZikrForm">
+        <div class="field" style="margin:0"><label for="customZikrName">Zikr nomi</label><input id="customZikrName" type="text" maxlength="70" placeholder="Masalan: Astag‘firulloh"></div>
+        <div class="row2"><div class="field" style="margin:0"><label for="customZikrTarget">Miqdori</label><input id="customZikrTarget" type="number" min="1" max="100000" value="33"></div><button class="btn primary" style="align-self:end" onclick="addCustomZikr()">Saqlash</button></div>
+      </div>
+      <div class="switch-row" style="margin-top:13px"><div><strong>Sanash ovozi</strong><small>Har bosishda yengil tovush</small></div><input id="tasbihSound" class="switch" type="checkbox" onchange="toggleTasbihSound(this.checked)"></div>
+      <div class="switch-row"><div><strong>Yengil tebranish</strong><small>Har bosishda qisqa tebranish</small></div><input id="tasbihVibration" class="switch" type="checkbox" onchange="toggleTasbihVibration(this.checked)"></div>
+    </div>
+    <div class="section-head"><h2>Zikrlar ro‘yxati</h2><span>Tanlash va tahrirlash</span></div>
+    <div class="card"><div id="zikrList" class="zikr-list"></div><p class="helper">Standart tartib: Subhanalloh — 33 marta, Alhamdulillah — 33 marta, Allohu Akbar — 33 marta. O‘zingiz istagan zikr va miqdorni ham qo‘shishingiz mumkin.</p></div>
+  </main>
+
+  <main id="settingsPage" class="page">
+    <div class="section-head" style="margin-top:2px"><h2>Sozlamalar</h2><span>Ilovani moslashtiring</span></div>
+
+    <div class="card">
+      <h3>📍 Joylashuv</h3>
+      <p>Namoz vaqtlarini hisoblash uchun shahringizni tanlang yoki GPS orqali aniqlang.</p>
+      <div class="field"><label for="citySelect">Shahar</label><select id="citySelect" onchange="selectCity(this.value)"></select></div>
+      <button class="btn full" onclick="useGps()">◎ Mening joylashuvimni aniqlash</button>
+      <div class="divider"></div>
+      <div class="field"><label>Koordinatalarni qo‘lda kiritish</label><div class="row2"><input id="manualLat" type="number" step="0.0001" placeholder="Kenglik"><input id="manualLon" type="number" step="0.0001" placeholder="Uzunlik"></div></div>
+      <button class="btn ghost full" onclick="saveManualLocation()">Koordinatalarni saqlash</button>
+      <div class="helper" id="locationInfo">—</div>
+    </div>
+
+    <div class="card">
+      <h3>🕰 Namoz vaqtlarini hisoblash</h3>
+      <p>Hisoblash usuli va Asr mazhabini tanlang. Vaqtlar tanlovingizga qarab qayta hisoblanadi.</p>
+      <div class="field"><label for="methodSelect">Hisoblash usuli</label><select id="methodSelect" onchange="changeMethod(this.value)"><option value="MWL">Musulmonlar Jahon Ligasi</option><option value="Karachi">Karachi</option><option value="Egypt">Misr</option><option value="ISNA">Shimoliy Amerika</option><option value="UmmAlQura">Umm al-Quro</option></select></div>
+      <div class="field"><label for="asrSelect">Asr hisoblash usuli</label><select id="asrSelect" onchange="changeAsr(this.value)"><option value="2">Hanafiy</option><option value="1">Shofe’iy, Molikiy, Hanbaliy</option></select></div>
+      <div class="helper">Hisoblash usullari turli fiqhiy va astronomik mezonlardan foydalanadi. Hududingizdagi rasmiy taqvim bilan taqqoslang.</div>
+    </div>
+
+    <div class="card">
+      <h3>✎ Namoz vaqtini qo‘lda belgilash</h3>
+      <p>Kerakli namoz uchun avtomatik hisoblangan vaqt o‘rniga o‘zingiz istagan soatni belgilang. Bu sozlama har kuni shu vaqtni qo‘llaydi.</p>
+      <div id="manualTimes"></div>
+      <button class="btn ghost full" onclick="resetManualTimes()">Barcha vaqtlarni avtomatik holatga qaytarish</button>
+    </div>
+
+    <div class="card">
+      <h3>↻ Telegram orqali avtomatik yangilanish</h3>
+      <p>Ilova @namozvaqti365 kanalining ommaviy sahifasidan e’lon qilingan haftalik jadvalni markaziy faylga yangilaydi. Kanalga bot qo‘shish yoki administrator ruxsati talab qilinmaydi.</p>
+      <div class="switch-row"><div><strong>Avtomatik yangilanish</strong><small>Ilova ochilganda va fonda davriy tekshirish</small></div><input id="telegramSyncEnabled" class="switch" type="checkbox" onchange="toggleTelegramSync(this.checked)"></div>
+      <div class="helper" id="telegramSyncStatus">Yangilanish manbasi sozlanmagan.</div>
+      <button class="btn full" onclick="refreshTelegramSchedule()">Hozir yangilash</button>
+      <p class="helper">Manba: <a href="https://t.me/namozvaqti365" target="_blank" rel="noopener" style="color:var(--gold)">@namozvaqti365 — Baliqchi tumani</a>. Server ommaviy Telegram preview sahifasini har 3 soatda tekshiradi. Preview ochiq bo‘lmasa yoki rasm aniq o‘qilmasa, eski jadval saqlanadi. Ilova esa GitHub’dagi umumiy jadvalni taxminan har 6 soatda oladi.</p>
+    </div>
+
+    <div class="card">
+      <h3>🔔 Azon ovozlari</h3>
+      <p>Uchta alohida MP3 yoki boshqa audio faylni telefoningizdan tanlang. Fayllar faqat qurilmangizda saqlanadi.</p>
+      <div id="voiceSlots"></div>
+      <div class="helper">Mualliflik huquqi bilan himoyalangan audio fayllardan foydalanishda tegishli ruxsatga ega ekaningizga ishonch hosil qiling.</div>
+      <div class="divider"></div>
+      <div class="switch-row"><div><strong>Azon xabarnomalarini yoqish</strong><small>O‘chirilsa, rejalashtirilgan azonlar bekor qilinadi</small></div><input id="settingsMasterAzan" class="switch" type="checkbox" onchange="setMasterAzan(this.checked)"></div>
+      <div class="subheading" style="margin-top:14px">Har bir namoz uchun ovoz</div>
+      <div id="prayerVoiceSettings"></div>
+      <button class="btn primary full" onclick="testSelectedAzan()">▶ Tanlangan azonni sinash</button>
+      <button class="btn ghost full" onclick="stopAzan()">Ovozni to‘xtatish</button>
+    </div>
+
+    <div class="card">
+      <h3>⚙ Android ruxsatlari</h3>
+      <p>Azonning o‘z vaqtida ishlashi uchun bildirishnoma va aniq signal ruxsatlarini yoqing.</p>
+      <button class="btn full" onclick="requestNotifications()">Bildirishnomalarga ruxsat berish</button>
+      <button class="btn ghost full" onclick="requestExactAlarm()">Aniq signal ruxsatini yoqish</button>
+      <div class="helper">Ayrim telefonlarda batareya tejash sozlamasi fon faoliyatini cheklashi mumkin. Ilova uchun batareya cheklovlarini o‘chirib qo‘yish tavsiya etiladi.</div>
+    </div>
+    <div class="card">
+      <h3>Ilova haqida</h3>
+      <p><b>NAMOZ VAQTLARI</b> — o‘zbek tilidagi, internetga bog‘liq bo‘lmagan namoz vaqtlari, azon va qibla yordamchisi. Hisoblangan vaqtlarning aniqligi tanlangan usul, joylashuv va qurilma vaqtiga bog‘liq.</p>
+      <div class="helper">1.0.0 · Barcha shaxsiy sozlamalar qurilmangizda saqlanadi.</div>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <div class="nav-inner" style="grid-template-columns:repeat(4,1fr)">
+    <button class="nav-item active" data-page="home" onclick="showPage('home')"><span>◷</span>Namoz</button>
+    <button class="nav-item" data-page="qibla" onclick="showPage('qibla')"><span>⌖</span>Qibla</button>
+    <button class="nav-item" data-page="tasbih" onclick="showPage('tasbih')"><span>◉</span>Tasbeh</button>
+    <button class="nav-item" data-page="settings" onclick="showPage('settings')"><span>⚙</span>Sozlamalar</button>
+  </div>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const PRAYERS = [
+  {id:'fajr',name:'Bomdod',icon:'☾',description:'Tong yorishishi'},
+  {id:'dhuhr',name:'Peshin',icon:'☀',description:'Quyosh og‘ishidan keyin'},
+  {id:'asr',name:'Asr',icon:'◒',description:'Kunning ikkinchi yarmi'},
+  {id:'maghrib',name:'Shom',icon:'◉',description:'Quyosh botishi'},
+  {id:'isha',name:'Xufton',icon:'✦',description:'Shafaq yo‘qolgach'}
+];
+const CITIES = [
+  {id:'baliqchi',name:'Baliqchi tumani',lat:40.90000,lon:71.85278},
+  {id:'tashkent',name:'Toshkent',lat:41.2995,lon:69.2401},
+  {id:'andijan',name:'Andijon',lat:40.7821,lon:72.3442},
+  {id:'samarkand',name:'Samarqand',lat:39.6542,lon:66.9597},
+  {id:'bukhara',name:'Buxoro',lat:39.7747,lon:64.4286},
+  {id:'fergana',name:'Farg‘ona',lat:40.3864,lon:71.7864},
+  {id:'namangan',name:'Namangan',lat:40.9983,lon:71.6726},
+  {id:'nukus',name:'Nukus',lat:42.4619,lon:59.6166},
+  {id:'qarshi',name:'Qarshi',lat:38.8610,lon:65.7847},
+  {id:'termez',name:'Termiz',lat:37.2242,lon:67.2783},
+  {id:'jizzakh',name:'Jizzax',lat:40.1158,lon:67.8422},
+  {id:'gulistan',name:'Guliston',lat:40.4897,lon:68.7842},
+  {id:'urgench',name:'Urganch',lat:41.5500,lon:60.6333},
+  {id:'navoi',name:'Navoiy',lat:40.1039,lon:65.3688},
+  {id:'kokand',name:'Qo‘qon',lat:40.5286,lon:70.9425}
+];
+const METHODS = {
+  MWL:{fajr:18,isha:17}, Karachi:{fajr:18,isha:18}, Egypt:{fajr:19.5,isha:17.5},
+  ISNA:{fajr:15,isha:15}, UmmAlQura:{fajr:18.5,isha:18.5}
+};
+const DEFAULTS = {
+  city:'baliqchi',lat:40.90000,lon:71.85278,cityName:'Baliqchi tumani',method:'Karachi',asr:2,
+  masterAzan:true,enabled:{fajr:true,dhuhr:true,asr:true,maghrib:true,isha:true},
+  voice:{fajr:'1',dhuhr:'1',asr:'1',maghrib:'1',isha:'1'},
+  manual:{fajr:false,dhuhr:false,asr:false,maghrib:false,isha:false},
+  manualTimes:{fajr:'',dhuhr:'',asr:'',maghrib:'',isha:''},voiceNames:{'1':'Ovoz 1 tanlanmagan','2':'Ovoz 2 tanlanmagan','3':'Ovoz 3 tanlanmagan'},
+  tasbihItems:[{id:'subhanallah',name:'Subhanalloh',target:33},{id:'alhamdulillah',name:'Alhamdulillah',target:33},{id:'allahuakbar',name:'Allohu Akbar',target:33}],tasbihIndex:0,tasbihCount:0,tasbihSound:true,tasbihVibration:true,telegramSyncEnabled:true
+};
+let settings = loadSettings();
+let latestTimes = null;
+let remoteSchedule = null;
+let magneticHeading = null;
+let qiblaBearing = 0;
+let toastTimer = null;
+function loadSettings(){
+  try{const saved=JSON.parse(localStorage.getItem('namozSettings')||'{}');const merged={...JSON.parse(JSON.stringify(DEFAULTS)),...saved};['enabled','voice','manual','manualTimes','voiceNames'].forEach(k=>merged[k]={...DEFAULTS[k],...(saved[k]||{})});if(!Array.isArray(merged.tasbihItems)||!merged.tasbihItems.length)merged.tasbihItems=JSON.parse(JSON.stringify(DEFAULTS.tasbihItems));merged.tasbihIndex=Math.max(0,Math.min(Number(merged.tasbihIndex)||0,merged.tasbihItems.length-1));merged.tasbihCount=Math.max(0,Number(merged.tasbihCount)||0);return merged;}
+  catch(_){return JSON.parse(JSON.stringify(DEFAULTS));}
+}
+function saveSettings(){const value=JSON.stringify(settings);localStorage.setItem('namozSettings',value);if(window.Android&&Android.saveAppSettings)Android.saveAppSettings(value);}
+function showToast(message){const el=document.getElementById('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2700);}
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const target=document.getElementById(name+'Page');if(target)target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.page===name));
+  if(name==='qibla')updateQibla();if(name==='settings')renderSettings();if(name==='tasbih')renderTasbih();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function rad(v){return v*Math.PI/180;}function deg(v){return v*180/Math.PI;}
+function julianAtMidnight(date){return Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())/86400000+2440587.5;}
+function norm360(v){return ((v%360)+360)%360;}
+function hourAngle(latitude,declination,altitude){
+  const p=rad(latitude),d=declination,h=rad(altitude);
+  const c=(Math.sin(h)-Math.sin(p)*Math.sin(d))/(Math.cos(p)*Math.cos(d));
+  if(c<-1||c>1)return null;return Math.acos(c);
+}
+function localDateFromUtcHours(day,hours){
+  const utcMidnight=Date.UTC(day.getFullYear(),day.getMonth(),day.getDate());
+  const utcTime=utcMidnight+hours*3600000;
+  const offsetMinutes=-day.getTimezoneOffset();
+  return new Date(utcTime+offsetMinutes*60000);
+}
+function solarData(day,lat,lon){
+  const jd=julianAtMidnight(day);
+  const n=Math.round(jd-2451545.0009+lon/360);
+  const jStar=2451545.0009-lon/360+n;
+  const mean=rad(norm360(357.5291+0.98560028*(jStar-2451545)));
+  const center=rad(1.9148)*Math.sin(mean)+rad(0.0200)*Math.sin(2*mean)+rad(0.0003)*Math.sin(3*mean);
+  const lambda=mean+center+rad(180+102.9372);
+  const declination=Math.asin(Math.sin(lambda)*Math.sin(rad(23.4397)));
+  const transit=jStar+0.0053*Math.sin(mean)-0.0069*Math.sin(2*lambda);
+  const utcNoon=(transit-jd)*24;
+  return {declination,utcNoon};
+}
+function calculatePrayerTimes(day,lat,lon,method,asrFactor){
+  const cfg=METHODS[method]||METHODS.Karachi;const sun=solarData(day,lat,lon);
+  const solarNoon=sun.utcNoon;
+  const fajrAngle=hourAngle(lat,sun.declination,-cfg.fajr);
+  const sunriseAngle=hourAngle(lat,sun.declination,-0.833);
+  const sunsetAngle=sunriseAngle;
+  const asrAltitude=deg(Math.atan(1/(asrFactor+Math.tan(Math.abs(rad(lat)-sun.declination)))));
+  const asrAngle=hourAngle(lat,sun.declination,asrAltitude);
+  const ishaAngle=hourAngle(lat,sun.declination,-cfg.isha);
+  const times={};
+  times.fajr=fajrAngle===null?null:localDateFromUtcHours(day,solarNoon-deg(fajrAngle)/15);
+  times.sunrise=sunriseAngle===null?null:localDateFromUtcHours(day,solarNoon-deg(sunriseAngle)/15);
+  times.dhuhr=localDateFromUtcHours(day,solarNoon+2/60);
+  times.asr=asrAngle===null?null:localDateFromUtcHours(day,solarNoon+deg(asrAngle)/15);
+  times.maghrib=sunsetAngle===null?null:localDateFromUtcHours(day,solarNoon+deg(sunsetAngle)/15);
+  times.isha=ishaAngle===null?null:localDateFromUtcHours(day,solarNoon+deg(ishaAngle)/15);
+  // Umm al-Qura: Isha odatda shomdan keyin 90 daqiqa (Ramazonda 120 daqiqa).
+  if(method==='UmmAlQura'&&times.maghrib){const minutes=(day.getMonth()===8)?120:90;times.isha=new Date(times.maghrib.getTime()+minutes*60000);}
+  return times;
+}
+function formatTime(date){if(!date||Number.isNaN(date.getTime()))return'--:--';const rounded=new Date(Math.round(date.getTime()/60000)*60000);return String(rounded.getHours()).padStart(2,'0')+':'+String(rounded.getMinutes()).padStart(2,'0');}
+function dateFromClock(day,clock){if(!clock)return null;const [h,m]=clock.split(':').map(Number);if(!Number.isFinite(h)||!Number.isFinite(m))return null;return new Date(day.getFullYear(),day.getMonth(),day.getDate(),h,m,0,0);}
+function getDisplayTime(day,times,id){if(settings.manual[id]&&settings.manualTimes[id])return dateFromClock(day,settings.manualTimes[id]);return times[id];}
+function dateKey(day){return `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;}
+function getRemoteDay(day){if(!remoteSchedule||!settings.telegramSyncEnabled)return null;const cityMatch=remoteSchedule.cityId==='all'||remoteSchedule.cityId===settings.city;if(!cityMatch)return null;return (remoteSchedule.days||[]).find(x=>x.date===dateKey(day))||null;}
+function getTodayTimes(day=new Date()){
+  const times=calculatePrayerTimes(day,settings.lat,settings.lon,settings.method,Number(settings.asr));
+  const remote=getRemoteDay(day);
+  if(remote){for(const id of ['fajr','dhuhr','asr','maghrib','isha','sunrise'])if(remote[id])times[id]=dateFromClock(day,remote[id]);}
+  for(const p of PRAYERS){if(settings.manual[p.id]&&settings.manualTimes[p.id])times[p.id]=dateFromClock(day,settings.manualTimes[p.id]);}
+  return times;
+}
+function renderHome(){
+  const now=new Date();const t=getTodayTimes(now);latestTimes=t;
+  document.getElementById('heroCity').textContent=settings.cityName;
+  document.getElementById('todayDate').textContent=new Intl.DateTimeFormat('uz-UZ',{day:'numeric',month:'long',weekday:'long'}).format(now);
+  document.getElementById('calculationLabel').textContent=getRemoteDay(now)?'Telegram jadvali':(settings.method==='Karachi'?'Karachi · Hanafiy':settings.method+' · '+(settings.asr==2?'Hanafiy':'Shofe’iy'));
+  const upcoming=PRAYERS.map(p=>({p,time:t[p.id]})).filter(x=>x.time&&x.time.getTime()>now.getTime()).sort((a,b)=>a.time-b.time);
+  let next=upcoming[0];if(!next){const tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);const tt=getTodayTimes(tomorrow);next={p:PRAYERS[0],time:tt.fajr};}
+  document.getElementById('nextName').textContent=next.p.name+' · '+formatTime(next.time);
+  let html='';
+  for(const p of PRAYERS){const time=t[p.id];const isNext=next.p.id===p.id&&next.time.toDateString()===now.toDateString();html+=`<div class="prayer-card ${isNext?'next':''}"><div class="prayer-icon">${p.icon}</div><div class="prayer-info"><strong>${p.name}</strong><small>${p.description}</small>${isNext?'<span class="status-tag">KEYINGI NAMOZ</span>':''}</div><div class="prayer-time">${formatTime(time)}</div></div>`;}
+  document.getElementById('prayerList').innerHTML=html;
+  document.getElementById('sunriseTime').textContent=formatTime(t.sunrise);
+  updateCountdown(next.time);
+  document.getElementById('masterAzan').checked=!!settings.masterAzan;
+}
+function updateCountdown(nextTime){const now=new Date();let diff=Math.max(0,nextTime.getTime()-now.getTime());const h=Math.floor(diff/3600000);diff%=3600000;const m=Math.floor(diff/60000);const s=Math.floor((diff%60000)/1000);document.getElementById('countdown').innerHTML=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}<small>qolgan vaqt</small>`;}
+function updateClock(){const n=new Date();document.getElementById('clock').textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');renderHome();}
+function getQiblaBearing(lat,lon){const kaabaLat=rad(21.4225),kaabaLon=rad(39.8262),p=rad(lat),l=rad(lon);const y=Math.sin(kaabaLon-l);const x=Math.cos(p)*Math.tan(kaabaLat)-Math.sin(p)*Math.cos(kaabaLon-l);return norm360(deg(Math.atan2(y,x)));}
+function updateQibla(){qiblaBearing=getQiblaBearing(settings.lat,settings.lon);document.getElementById('qiblaBearing').textContent=Math.round(qiblaBearing)+'°';if(magneticHeading!==null)document.getElementById('phoneHeading').textContent=Math.round(magneticHeading)+'°';else document.getElementById('phoneHeading').textContent='—°';rotateNeedle();}
+function rotateNeedle(){const needle=document.getElementById('compassNeedle');if(magneticHeading===null){needle.style.transform='rotate(0deg)';document.getElementById('compassState').textContent='Sensor kutilmoqda';document.getElementById('compassHint').textContent='Kompas sensori ma’lumoti kutilmoqda. Telefoningizda magnitometr bo‘lmasligi mumkin.';return;}const relative=norm360(qiblaBearing-magneticHeading);needle.style.transform=`rotate(${relative}deg)`;document.getElementById('compassState').textContent='Kompas faol';document.getElementById('compassHint').textContent='Oltin uchli strelka Qibla tomonga yo‘naladi. Telefonni tekis tuting va magnitli buyumlardan uzoqroq turing.';}
+window.onCompassUpdate=function(degrees){magneticHeading=degrees;document.getElementById('phoneHeading').textContent=Math.round(degrees)+'°';rotateNeedle();};
+function nearestCityForCoordinates(lat,lon){let best=null,bestKm=Infinity;for(const city of CITIES){const dLat=rad(city.lat-lat),dLon=rad(city.lon-lon),a=Math.sin(dLat/2)**2+Math.cos(rad(lat))*Math.cos(rad(city.lat))*Math.sin(dLon/2)**2,km=6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));if(km<bestKm){bestKm=km;best=city;}}return bestKm<=45?best:null;}
+window.onNativeLocation=function(lat,lon){settings.lat=Number(lat);settings.lon=Number(lon);const nearest=nearestCityForCoordinates(settings.lat,settings.lon);settings.city=nearest?nearest.id:'gps';settings.cityName=nearest?nearest.name+' · GPS':'Mening joylashuvim';saveSettings();renderAll();showToast('Joylashuv aniqlandi');};
+window.onNativeLocationError=function(message){showToast(message);};
+window.onScheduleSaved=function(ok){if(ok){}else showToast('Azon jadvalini saqlashda xatolik yuz berdi');};
+window.onNotificationPermission=function(ok){showToast(ok?'Bildirishnomalarga ruxsat berildi':'Bildirishnoma ruxsati berilmadi');};
+window.onExactAlarmPermission=function(ok){showToast(ok?'Aniq signal ruxsati mavjud':'Aniq signal ruxsati kerak');scheduleAzan();};
+window.onAzanFilePicked=function(slot,name){settings.voiceNames[slot]=name;saveSettings();renderSettings();showToast('Ovoz '+slot+' saqlandi');};
+window.onRemotePrayerTimes=function(raw){try{remoteSchedule=typeof raw==='string'?JSON.parse(raw):raw;renderAll();const label=document.getElementById('telegramSyncStatus');const match=remoteSchedule.cityId==='all'||remoteSchedule.cityId===settings.city;if(label)label.textContent=match?`Jadval yangilandi: ${remoteSchedule.updatedAt||'sana ko‘rsatilmagan'} · ${remoteSchedule.source||'manba'}`:`Jadval ${remoteSchedule.cityName||remoteSchedule.cityId} uchun. Sozlamalarda shu shaharni tanlang.`;showToast(match?'Namoz jadvali yangilandi':'Jadval boshqa shahar uchun');}catch(_){showToast('Yangilangan jadvalni o‘qib bo‘lmadi');}};
+window.onRemoteSyncError=function(message){const label=document.getElementById('telegramSyncStatus');if(label)label.textContent=message||'Yangilanish amalga oshmadi';};
+function renderCitySelect(){const select=document.getElementById('citySelect');select.innerHTML='<option value="gps">Mening joylashuvim (GPS)</option><option value="custom">Qo‘lda kiritilgan koordinatalar</option>'+CITIES.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');select.value=(settings.city==='gps'||settings.city==='custom'||CITIES.some(c=>c.id===settings.city))?settings.city:'baliqchi';document.getElementById('manualLat').value=settings.lat;document.getElementById('manualLon').value=settings.lon;document.getElementById('locationInfo').textContent=`Kenglik: ${Number(settings.lat).toFixed(4)} · Uzunlik: ${Number(settings.lon).toFixed(4)}`;}
+function selectCity(id){if(id==='gps'){useGps();return;}if(id==='custom'){showToast('Qo‘lda kiritilgan koordinatalar saqlanadi');return;}const city=CITIES.find(c=>c.id===id);if(!city)return;settings.city=id;settings.cityName=city.name;settings.lat=city.lat;settings.lon=city.lon;saveSettings();renderAll();showToast(city.name+' tanlandi');}
+function useGps(){if(window.Android&&Android.getCurrentLocation)Android.getCurrentLocation();else if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>window.onNativeLocation(p.coords.latitude,p.coords.longitude),()=>showToast('GPS orqali joylashuv aniqlanmadi'));}else showToast('GPS faqat Android ilovasida ishlaydi');}
+function saveManualLocation(){const lat=Number(document.getElementById('manualLat').value),lon=Number(document.getElementById('manualLon').value);if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat<-90||lat>90||lon<-180||lon>180){showToast('Koordinatalarni to‘g‘ri kiriting');return;}settings.lat=lat;settings.lon=lon;const nearest=nearestCityForCoordinates(lat,lon);settings.city=nearest?nearest.id:'custom';settings.cityName=nearest?nearest.name+' · qo‘lda':'Tanlangan joy';saveSettings();renderAll();showToast('Koordinatalar saqlandi');}
+function changeMethod(v){settings.method=v;saveSettings();renderAll();}
+function changeAsr(v){settings.asr=Number(v);saveSettings();renderAll();}
+function renderManualTimes(){const holder=document.getElementById('manualTimes');holder.innerHTML=PRAYERS.map(p=>{const current=getTodayTimes()[p.id];const val=settings.manualTimes[p.id]||formatTime(current);return `<div class="manual-row"><div><strong>${p.name}</strong><small>${settings.manual[p.id]?'Qo‘lda belgilangan':'Avtomatik hisoblanadi'}</small></div><input aria-label="${p.name} vaqti" type="time" value="${val==='--:--'?'':val}" id="manual_${p.id}" onchange="setManualTime('${p.id}',this.value)" ${settings.manual[p.id]?'':'disabled'}><label class="mini-check"><input type="checkbox" ${settings.manual[p.id]?'checked':''} onchange="toggleManual('${p.id}',this.checked)">Qo‘lda</label></div>`;}).join('');}
+function setManualTime(id,value){settings.manualTimes[id]=value;if(value)settings.manual[id]=true;saveSettings();renderAll();}
+function toggleManual(id,enabled){settings.manual[id]=enabled;if(enabled&&!settings.manualTimes[id])settings.manualTimes[id]=formatTime(calculatePrayerTimes(new Date(),settings.lat,settings.lon,settings.method,Number(settings.asr))[id]);saveSettings();renderAll();}
+function resetManualTimes(){PRAYERS.forEach(p=>{settings.manual[p.id]=false;settings.manualTimes[p.id]='';});saveSettings();renderAll();showToast('Barcha vaqtlar avtomatik hisoblashga qaytdi');}
+function setMasterAzan(enabled){settings.masterAzan=enabled;saveSettings();document.getElementById('masterAzan').checked=enabled;document.getElementById('settingsMasterAzan').checked=enabled;scheduleAzan();showToast(enabled?'Azon xabarnomalari yoqildi':'Azon xabarnomalari o‘chirildi');}
+function togglePrayerAzan(id,enabled){settings.enabled[id]=enabled;saveSettings();scheduleAzan();}
+function changePrayerVoice(id,slot){settings.voice[id]=slot;saveSettings();scheduleAzan();}
+function renderVoiceSlots(){const el=document.getElementById('voiceSlots');el.innerHTML=['1','2','3'].map(slot=>`<div class="voice-slot"><div><strong>Ovoz ${slot}</strong><small>${escapeHtml(settings.voiceNames[slot]||'Fayl tanlanmagan')}</small></div><div class="voice-actions"><button class="btn" onclick="pickVoice('${slot}')">Tanlash</button><button class="btn ghost" onclick="testVoice('${slot}')">▶</button></div></div>`).join('');}
+function renderPrayerVoiceSettings(){document.getElementById('prayerVoiceSettings').innerHTML=PRAYERS.map(p=>`<div class="prayer-voice"><strong>${p.name}</strong><select aria-label="${p.name} azon ovozi" value="${settings.voice[p.id]}" onchange="changePrayerVoice('${p.id}',this.value)"><option value="1" ${settings.voice[p.id]==='1'?'selected':''}>Ovoz 1</option><option value="2" ${settings.voice[p.id]==='2'?'selected':''}>Ovoz 2</option><option value="3" ${settings.voice[p.id]==='3'?'selected':''}>Ovoz 3</option></select><input class="switch" type="checkbox" ${settings.enabled[p.id]?'checked':''} aria-label="${p.name} azonini yoqish" onchange="togglePrayerAzan('${p.id}',this.checked)"></div>`).join('');}
+function renderSettings(){document.getElementById('telegramSyncEnabled').checked=!!settings.telegramSyncEnabled;const syncLabel=document.getElementById('telegramSyncStatus');if(syncLabel&&!remoteSchedule)syncLabel.textContent='Markaziy jadval manbasi ulanmagan yoki hali yuklanmagan.';document.getElementById('citySelect').value=(settings.city==='gps'||settings.city==='custom'||CITIES.some(c=>c.id===settings.city))?settings.city:'baliqchi';document.getElementById('methodSelect').value=settings.method;document.getElementById('asrSelect').value=String(settings.asr);document.getElementById('settingsMasterAzan').checked=!!settings.masterAzan;renderCitySelect();document.getElementById('methodSelect').value=settings.method;document.getElementById('asrSelect').value=String(settings.asr);renderManualTimes();renderVoiceSlots();renderPrayerVoiceSettings();}
+function pickVoice(slot){if(window.Android&&Android.pickAzanVoice)Android.pickAzanVoice(slot);else showToast('Audio tanlash Android ilovasida ishlaydi');}
+function testVoice(slot){if(window.Android&&Android.testAzan)Android.testAzan(slot);else showToast('Azon sinovi Android ilovasida ishlaydi');}
+function testSelectedAzan(){const slot=settings.voice.fajr||'1';testVoice(slot);}
+function stopAzan(){if(window.Android&&Android.stopAzan)Android.stopAzan();}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function requestNotifications(){if(window.Android&&Android.requestNotificationPermission)Android.requestNotificationPermission();else showToast('Bu ruxsat Android ilovasida so‘raladi');}
+function requestExactAlarm(){if(window.Android&&Android.requestExactAlarmPermission)Android.requestExactAlarmPermission();else showToast('Bu ruxsat Android ilovasida sozlanadi');}
+
+function currentTasbihItem(){return settings.tasbihItems[settings.tasbihIndex]||settings.tasbihItems[0];}
+function renderTasbih(){const item=currentTasbihItem();if(!item)return;document.getElementById('tasbihCount').textContent=settings.tasbihCount;document.getElementById('tasbihTarget').textContent='/ '+item.target;document.getElementById('tasbihCurrent').textContent=item.name;document.getElementById('tasbihProgressLabel').textContent=(settings.tasbihIndex+1)+' / '+settings.tasbihItems.length;document.getElementById('tasbihSetLabel').textContent=item.target+' tadan';document.getElementById('tasbihSound').checked=!!settings.tasbihSound;document.getElementById('tasbihVibration').checked=!!settings.tasbihVibration;const done=settings.tasbihCount>=item.target;document.getElementById('tasbihCounter').style.borderColor=done?'#9bc99f':'#d6b66b66';document.getElementById('zikrList').innerHTML=settings.tasbihItems.map((z,i)=>`<div class="zikr-item ${i===settings.tasbihIndex?'active':''}"><div class="zikr-main" onclick="selectTasbih(${i})"><strong>${escapeHtml(z.name)}</strong><small>${i===settings.tasbihIndex?'Hozirgi zikr':'Tanlash uchun bosing'} · ${z.target} marta</small></div><span class="zikr-count">${i===settings.tasbihIndex?settings.tasbihCount:0}/${z.target}</span>${z.custom?`<button class="btn danger" onclick="removeCustomZikr(${i})" aria-label="Zikrni o‘chirish">×</button>`:''}</div>`).join('');}
+function incrementTasbih(){const item=currentTasbihItem();if(!item)return;if(settings.tasbihCount<item.target)settings.tasbihCount++;saveSettings();tasbihFeedback();renderTasbih();if(settings.tasbihCount===item.target)showToast(item.name+' — '+item.target+' marta yakunlandi');}
+function undoTasbih(){settings.tasbihCount=Math.max(0,settings.tasbihCount-1);saveSettings();renderTasbih();}
+function resetTasbihCount(){settings.tasbihCount=0;saveSettings();renderTasbih();}
+function nextTasbih(){settings.tasbihIndex=(settings.tasbihIndex+1)%settings.tasbihItems.length;settings.tasbihCount=0;saveSettings();renderTasbih();}
+function previousTasbih(){settings.tasbihIndex=(settings.tasbihIndex-1+settings.tasbihItems.length)%settings.tasbihItems.length;settings.tasbihCount=0;saveSettings();renderTasbih();}
+function selectTasbih(index){if(index<0||index>=settings.tasbihItems.length)return;settings.tasbihIndex=index;settings.tasbihCount=0;saveSettings();renderTasbih();}
+function toggleCustomZikrForm(){const form=document.getElementById('customZikrForm');form.classList.toggle('open');if(form.classList.contains('open'))document.getElementById('customZikrName').focus();}
+function addCustomZikr(){const input=document.getElementById('customZikrName'),name=input.value.trim(),target=Number(document.getElementById('customZikrTarget').value);if(!name){showToast('Zikr nomini kiriting');input.focus();return;}if(!Number.isInteger(target)||target<1||target>100000){showToast('Miqdor 1 dan 100000 gacha butun son bo‘lsin');return;}settings.tasbihItems.push({id:'custom_'+Date.now(),name,target,custom:true});settings.tasbihIndex=settings.tasbihItems.length-1;settings.tasbihCount=0;input.value='';document.getElementById('customZikrTarget').value='33';document.getElementById('customZikrForm').classList.remove('open');saveSettings();renderTasbih();showToast('Yangi zikr qo‘shildi');}
+function removeCustomZikr(index){if(!settings.tasbihItems[index]||!settings.tasbihItems[index].custom)return;settings.tasbihItems.splice(index,1);settings.tasbihIndex=Math.min(settings.tasbihIndex,settings.tasbihItems.length-1);settings.tasbihCount=0;saveSettings();renderTasbih();}
+function toggleTasbihSound(enabled){settings.tasbihSound=enabled;saveSettings();}
+function toggleTasbihVibration(enabled){settings.tasbihVibration=enabled;saveSettings();}
+function tasbihFeedback(){if(settings.tasbihSound&&window.Android&&Android.tasbihTick)Android.tasbihTick();else if(settings.tasbihSound){try{const C=window.AudioContext||window.webkitAudioContext;if(C){const c=new C(),o=c.createOscillator(),g=c.createGain();o.frequency.value=850;g.gain.value=.035;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.035);o.onended=()=>c.close();}}catch(_){}}if(settings.tasbihVibration&&window.Android&&Android.tasbihVibrate)Android.tasbihVibrate();else if(settings.tasbihVibration&&navigator.vibrate)navigator.vibrate(12);}
+function toggleTelegramSync(enabled){settings.telegramSyncEnabled=enabled;saveSettings();renderAll();renderSettings();}
+function refreshTelegramSchedule(){if(!settings.telegramSyncEnabled){showToast('Avtomatik yangilanish o‘chirilgan');return;}if(window.Android&&Android.refreshPrayerTimes){Android.refreshPrayerTimes();showToast('Yangilanish tekshirilmoqda');}else showToast('Yangilash Android ilovasida ishlaydi');}
+window.refreshTelegramQuietly=function(){if(settings.telegramSyncEnabled&&window.Android&&Android.refreshPrayerTimes)Android.refreshPrayerTimes();};
+function scheduleAzan(){
+  if(!window.Android||!Android.schedulePrayerAlarms)return;
+  const items=[];const start=new Date();
+  for(let offset=0;offset<30;offset++){
+    const day=new Date(start.getFullYear(),start.getMonth(),start.getDate()+offset);
+    const calculated=getTodayTimes(day);
+    for(const p of PRAYERS){
+      if(!settings.masterAzan||!settings.enabled[p.id])continue;
+      let at=settings.manual[p.id]&&settings.manualTimes[p.id]?dateFromClock(day,settings.manualTimes[p.id]):calculated[p.id];
+      if(!at||at.getTime()<=Date.now()+3000)continue;
+      items.push({id:`${day.getFullYear()}-${day.getMonth()+1}-${day.getDate()}-${p.id}`,at:at.getTime(),name:p.name,voice:settings.voice[p.id]||'1',enabled:true});
+    }
+  }
+  Android.schedulePrayerAlarms(JSON.stringify(items));
+}
+function renderAll(){renderCitySelect();renderHome();updateQibla();renderSettings();scheduleAzan();if(window.Android&&Android.setCoordinates)Android.setCoordinates(Number(settings.lat),Number(settings.lon));}
+function init(){renderCitySelect();renderSettings();saveSettings();renderAll();renderTasbih();setInterval(updateClock,1000);setInterval(()=>{if(settings.telegramSyncEnabled&&window.Android&&Android.refreshPrayerTimes)Android.refreshPrayerTimes();},6*60*60*1000);updateClock();}
+init();
+</script>
+</body>
+</html>

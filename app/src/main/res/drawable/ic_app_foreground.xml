@@ -1,0 +1,29 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Decorative arch -->
+    <path android:fillColor="#00000000" android:strokeColor="#E7C36F" android:strokeWidth="2.4"
+        android:pathData="M17,91 L17,55 C17,33 34,16 54,16 C74,16 91,33 91,55 L91,91" />
+    <path android:fillColor="#00000000" android:strokeColor="#8C713D" android:strokeWidth="1"
+        android:pathData="M23,90 L23,57 C23,38 37,23 54,23 C71,23 85,38 85,57 L85,90" />
+    <!-- Crescent and star -->
+    <path android:fillColor="#F3D88F" android:pathData="M66,20 A12,12 0,1 0,79 34 A10,10 0,1 1,66 20 Z" />
+    <path android:fillColor="#F3D88F" android:pathData="M40,24 L42.1,29.6 L48,30 L43.5,33.7 L45,39.3 L40,36.1 L35,39.3 L36.5,33.7 L32,30 L37.9,29.6 Z" />
+    <!-- Left minaret -->
+    <path android:fillColor="#D9B765" android:pathData="M25,55 L25,39 L29,35 L33,39 L33,55 L35,55 L35,83 L23,83 L23,55 Z" />
+    <path android:fillColor="#F5DE9D" android:pathData="M24,39 L29,31 L34,39 Z M26,47 L32,47 L32,49 L26,49 Z" />
+    <path android:fillColor="#08251E" android:pathData="M27,60 L31,60 L31,66 L27,66 Z M27,72 L31,72 L31,78 L27,78 Z" />
+    <!-- Right minaret -->
+    <path android:fillColor="#D9B765" android:pathData="M75,55 L75,39 L79,35 L83,39 L83,55 L85,55 L85,83 L73,83 L73,55 Z" />
+    <path android:fillColor="#F5DE9D" android:pathData="M74,39 L79,31 L84,39 Z M76,47 L82,47 L82,49 L76,49 Z" />
+    <path android:fillColor="#08251E" android:pathData="M77,60 L81,60 L81,66 L77,66 Z M77,72 L81,72 L81,78 L77,78 Z" />
+    <!-- Main dome and mosque -->
+    <path android:fillColor="#D7B363" android:pathData="M34,66 C34,57 42,48 54,42 C66,48 74,57 74,66 L74,83 L34,83 Z" />
+    <path android:fillColor="#F4D98F" android:pathData="M39,65 C39,54 46,45 54,41 C62,45 69,54 69,65 Z" />
+    <path android:fillColor="#A78342" android:pathData="M51,41 L54,34 L57,41 Z M53,31 L55,31 L55,35 L53,35 Z" />
+    <path android:fillColor="#08251E" android:pathData="M49,70 C49,65 51,62 54,62 C57,62 59,65 59,70 L59,83 L49,83 Z" />
+    <path android:fillColor="#08251E" android:pathData="M39,71 L45,71 L45,78 L39,78 Z M63,71 L69,71 L69,78 L63,78 Z" />
+    <!-- Foundation and gold line -->
+    <path android:fillColor="#E5C476" android:pathData="M20,84 L88,84 L88,88 L20,88 Z" />
+    <path android:fillColor="#A9894D" android:pathData="M17,91 L91,91 L91,93 L17,93 Z" />
+</vector>
