@@ -25,8 +25,8 @@ LOG = logging.getLogger("namoz-public-sync")
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(levelname)s %(message)s")
 TZ = ZoneInfo(os.getenv("TIMEZONE", "Asia/Tashkent"))
 CHANNEL = os.getenv("TELEGRAM_CHANNEL_USERNAME", "namozvaqti365").lstrip("@")
-REPO = os.environ["GITHUB_REPOSITORY"]
-TOKEN = os.environ["GITHUB_TOKEN"]
+REPO = os.getenv("GITHUB_REPOSITORY", "").strip()
+TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
 BRANCH = os.getenv("GITHUB_BRANCH", "main")
 DATA_PATH = os.getenv("GITHUB_PATH", "data/prayer-times.json")
 CITY_ID = os.getenv("CITY_ID", "baliqchi")
@@ -152,6 +152,8 @@ def get_posts() -> list[dict]:
 
 
 def update_json(start: date, end: date, times: list[str], post: dict) -> bool:
+    if not REPO or not TOKEN:
+        raise RuntimeError("GITHUB_REPOSITORY va GITHUB_TOKEN sozlamalari kerak.")
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {TOKEN}",
@@ -208,6 +210,8 @@ def update_json(start: date, end: date, times: list[str], post: dict) -> bool:
 
 
 def main() -> None:
+    if not REPO or not TOKEN:
+        raise SystemExit("GITHUB_REPOSITORY va GITHUB_TOKEN sozlamalari kiritilmagan.")
     today = datetime.now(TZ).date()
     failures = []
     posts = get_posts()
