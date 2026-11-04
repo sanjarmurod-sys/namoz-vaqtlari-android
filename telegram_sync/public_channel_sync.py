@@ -28,7 +28,7 @@ CHANNEL = os.getenv("TELEGRAM_CHANNEL_USERNAME", "namozvaqti365").lstrip("@")
 REPO = os.getenv("GITHUB_REPOSITORY", "").strip()
 TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
 BRANCH = os.getenv("GITHUB_BRANCH", "main")
-DATA_PATH = os.getenv("GITHUB_PATH", "data/prayer-times.json")
+DATA_PATH = os.getenv("PRAYER_JSON_PATH", "data/prayer-times.json")
 CITY_ID = os.getenv("CITY_ID", "baliqchi")
 CITY_NAME = os.getenv("CITY_NAME", "Baliqchi tumani")
 PREVIEW = f"https://t.me/s/{CHANNEL}"
@@ -64,55 +64,60 @@ def parse_week(text: str, today: date | None = None) -> tuple[date, date]:
 
 
 def read_times(image_bytes: bytes) -> tuple[list[str], str]:
+    """Read the table-style poster with one sparse-text OCR pass.
+
+    PSM 11 separates the prayer names and times into columns. We merge words
+    on the same horizontal line, then keep only lines containing one valid time.
+    """
     image = Image.open(io.BytesIO(image_bytes)).convert("L")
-    scale = max(4, min(9, 1800 // max(image.width, 1)))
-    image = image.resize((image.width*scale, image.height*scale), Image.Resampling.LANCZOS)
+    scale = max(4, min(8, 1800 // max(image.width, 1)))
+    image = image.resize((image.width * scale, image.height * scale), Image.Resampling.LANCZOS)
     image = ImageOps.autocontrast(image)
-    image = ImageEnhance.Contrast(image).enhance(1.45)
-    image = image.filter(ImageFilter.UnsharpMask(radius=2, percent=180, threshold=2))
-    rows: list[dict] = []
-    ocr_lines: list[str] = []
-    for psm in (11, 4, 6, 12):
-        d = pytesseract.image_to_data(image, lang="eng", config=f"--oem 1 --psm {psm}", output_type=Output.DICT)
-        by_y: dict[int, list[tuple[int, str, float]]] = defaultdict(list)
-        for i, raw in enumerate(d["text"]):
-            token = (raw or "").strip()
-            try:
-                conf = float(d["conf"][i])
-            except (TypeError, ValueError):
-                conf = -1
-            if token and conf >= 25:
-                by_y[int(d["top"][i])].append((int(d["left"][i]), token, conf))
-        for y, tokens in sorted(by_y.items()):
-            group = next((r for r in rows if abs(r["y"]-y) <= max(30, int(image.height*.04))), None)
-            if group is None:
-                group = {"y": y, "choices": []}
-                rows.append(group)
-            text = " ".join(t[1] for t in sorted(tokens))
-            ocr_lines.append(text)
-            compact_text = re.sub(r"\s+", "", text)
-            if DATE_RE.search(compact_text):
-                continue
-            matches = list(TIME_RE.finditer(text))
-            if len(matches) == 1:
-                m = matches[0]
-                value = f"{int(m.group(1)):02d}:{m.group(2)}"
-                group["choices"].append((value, sum(t[2] for t in tokens)/len(tokens)))
-    rows.sort(key=lambda r: r["y"])
-    values = []
-    for row in rows:
-        if not row["choices"]:
+    image = ImageEnhance.Contrast(image).enhance(1.6)
+    image = image.filter(ImageFilter.UnsharpMask(radius=1, percent=150, threshold=2))
+
+    data = pytesseract.image_to_data(
+        image, lang="eng", config="--oem 1 --psm 11", output_type=Output.DICT
+    )
+    words_by_y: list[dict] = []
+    for i, raw in enumerate(data["text"]):
+        token = (raw or "").strip()
+        try:
+            confidence = float(data["conf"][i])
+        except (TypeError, ValueError):
+            confidence = -1
+        if not token or confidence < 20:
             continue
-        scores = defaultdict(list)
-        for value, conf in row["choices"]:
-            scores[value].append(conf)
-        values.append(max(scores, key=lambda v: (len(scores[v]), sum(scores[v])/len(scores[v]))))
-    if len(values) not in (5, 6):
-        raise ValueError(f"5 yoki 6 ta vaqt o‘qilmadi (topildi: {len(values)}).")
-    mins = [int(v[:2])*60+int(v[3:]) for v in values]
-    if any(b <= a for a,b in zip(mins, mins[1:])):
+        center_y = int(data["top"][i]) + int(data["height"][i]) // 2
+        row = next((item for item in words_by_y if abs(item["y"] - center_y) <= max(12, int(image.height * 0.025))), None)
+        if row is None:
+            row = {"y": center_y, "words": []}
+            words_by_y.append(row)
+        row["words"].append((int(data["left"][i]), token, confidence))
+
+    words_by_y.sort(key=lambda item: item["y"])
+    ocr_lines: list[str] = []
+    times: list[str] = []
+    for row in words_by_y:
+        line = " ".join(word[1] for word in sorted(row["words"], key=lambda item: item[0]))
+        ocr_lines.append(line)
+        compact = re.sub(r"\s+", "", line)
+        if DATE_RE.search(compact):
+            continue
+        matches = list(TIME_RE.finditer(line))
+        if len(matches) != 1:
+            continue
+        match = matches[0]
+        hour = int(match.group(1))
+        minute = int(match.group(2))
+        times.append(f"{hour:02d}:{minute:02d}")
+
+    if len(times) not in (5, 6):
+        raise ValueError(f"5 yoki 6 ta vaqt o‘qilmadi (topildi: {len(times)}): {' | '.join(ocr_lines[:12])}")
+    minutes = [int(value[:2]) * 60 + int(value[3:]) for value in times]
+    if any(later <= earlier for earlier, later in zip(minutes, minutes[1:])):
         raise ValueError("Vaqtlar ketma-ketligi shubhali.")
-    return values, "\n".join(ocr_lines)
+    return times, "\n".join(ocr_lines)
 
 
 def poster_photo(node) -> str | None:
