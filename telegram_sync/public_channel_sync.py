@@ -135,13 +135,13 @@ def poster_photo(node) -> str | None:
     # Telegram has used both CSS background images and lazy-loaded img tags.
     for el in node.select(
         ".tgme_widget_message_photo_wrap, .tgme_widget_message_video_thumb, "
-        ".tgme_widget_message_photo, [style*='background-image']"
+        ".tgme_widget_message_photo"
     ):
         style = el.get("style", "")
         m = re.search(r"url\(['\"]?(.*?)['\"]?\)", style, re.I)
         if m:
             return urljoin("https://t.me", m.group(1).replace("&amp;", "&"))
-    for img in node.select(".tgme_widget_message_photo img, img[src], img[data-src]"):
+    for img in node.select(".tgme_widget_message_photo img, .tgme_widget_message_photo_wrap img, .tgme_widget_message_video_thumb img"):
         candidate = img.get("data-src") or img.get("src") or ""
         if candidate and not candidate.startswith("data:"):
             return urljoin("https://t.me", candidate.replace("&amp;", "&"))
