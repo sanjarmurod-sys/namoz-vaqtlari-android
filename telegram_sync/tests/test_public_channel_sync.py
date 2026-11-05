@@ -107,5 +107,28 @@ class PublicChannelParserTests(unittest.TestCase):
         put.assert_called_once()
 
 
+    def test_repeated_poster_cells_are_combined_by_ocr_consensus(self):
+        passes = [
+            "6-15 6-15 17-10 13-00 18-55",
+            "06-15 15-30 17-10 13-00 18-55",
+            "06-15 13-00 15-30 17-10 18-55",
+            "06-15 07-10 13-00 15-30 17-10 18-55",
+            "06-15 07-10 13-00 15-30 17-10 18-55",
+            "06-15 07-10 13-00 15-30 17-10 18-55 13-30",
+        ]
+        self.assertEqual(
+            sync._consensus_times(passes),
+            ["06:15", "07:10", "13:00", "15:30", "17:10", "18:55"],
+        )
+
+    def test_old_telegram_publication_cannot_become_current_year_schedule(self):
+        with self.assertRaises(ValueError):
+            sync.parse_week(
+                "14.11-20.11",
+                today=date(2026, 11, 5),
+                published_date=date(2025, 11, 13),
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
