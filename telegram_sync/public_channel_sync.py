@@ -224,9 +224,6 @@ def update_json(start: date, end: date, times: list[str], post: dict) -> bool:
             existing = json.loads(base64.b64decode(body.get("content", "")).decode())
         except Exception:
             existing = {}
-        if str(existing.get("sourcePostId", "")) == str(post["id"]):
-            LOG.info("Bu Telegram posti oldin qo‘llangan: #%s", post["id"])
-            return False
         try:
             old_week = date.fromisoformat(existing.get("weekStart", ""))
         except (TypeError, ValueError):
