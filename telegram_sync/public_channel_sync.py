@@ -33,7 +33,8 @@ CITY_ID = os.getenv("CITY_ID", "baliqchi")
 CITY_NAME = os.getenv("CITY_NAME", "Baliqchi tumani")
 PREVIEW = f"https://t.me/s/{CHANNEL}"
 API = f"https://api.github.com/repos/{REPO}/contents/{DATA_PATH}"
-DATE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[.,/]\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?!\d)")
+DATE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?(?!\d)")
+DATE_SAME_MONTH_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?(?!\d)")
 TIME_RE = re.compile(r"(?<!\d)(2[0-3]|[01]?\d)\s*[-:.,٫]\s*([0-5]\d)(?!\d)")
 HTTP = requests.Session()
 HTTP.headers.update({"User-Agent": "Mozilla/5.0 (compatible; NamozVaqtlari/1.0)", "Accept": "text/html,*/*"})
@@ -41,10 +42,17 @@ HTTP.headers.update({"User-Agent": "Mozilla/5.0 (compatible; NamozVaqtlari/1.0)"
 
 def parse_week(text: str, today: date | None = None) -> tuple[date, date]:
     today = today or datetime.now(TZ).date()
-    m = DATE_RE.search(text or "")
-    if not m:
-        raise ValueError("Hafta sanasi topilmadi (masalan, 30.10-05.11).")
-    sd, sm, ed, em = map(int, m.groups())
+    source = text or ""
+    m = DATE_RE.search(source)
+    if m:
+        sd, sm, ed, em = map(int, m.groups())
+    else:
+        same_month = DATE_SAME_MONTH_RE.search(source)
+        if not same_month:
+            raise ValueError("Hafta sanasi topilmadi (masalan, 06.11-12.11 yoki 06-12.11).")
+        sd, ed, sm = map(int, same_month.groups())
+        em = sm
+
     candidates = []
     for year in (today.year - 1, today.year, today.year + 1):
         try:
@@ -63,93 +71,140 @@ def parse_week(text: str, today: date | None = None) -> tuple[date, date]:
     return start, end
 
 
-def read_times(image_bytes: bytes) -> tuple[list[str], str]:
-    """Read a low-resolution weekly poster by OCR'ing date and numeric columns separately."""
-    original = Image.open(io.BytesIO(image_bytes)).convert("L")
+def _times_from_ocr_text(text: str) -> list[str] | None:
+    """Extract 5/6 chronological prayer times from OCR output, including row/table layouts."""
+    found: list[str] = []
+    for line in (text or "").splitlines():
+        cleaned = DATE_RE.sub(" ", line)
+        cleaned = DATE_SAME_MONTH_RE.sub(" ", cleaned)
+        # A lone date such as 06.11 must not be mistaken for the time 06:11.
+        cleaned = re.sub(r"(?<!\d)\d{1,2}\\s*[./]\\s*\\d{1,2}(?:[./]\\s*\\d{2,4})?(?!\d)", " ", cleaned)
+        for match in TIME_RE.finditer(cleaned):
+            found.append(f"{int(match.group(1)):02d}:{int(match.group(2)):02d}")
 
-    # Read the heading from the complete image so the week range can be validated.
-    heading = original.resize(
-        (original.width * 5, original.height * 5), Image.Resampling.LANCZOS
-    )
-    heading = ImageOps.autocontrast(heading)
-    heading_text = pytesseract.image_to_string(
-        heading, lang="eng", config="--oem 1 --psm 11"
-    )
-
-    # Prayer tables conventionally place times in the right-hand column.
-    # A digits-only whitelist avoids confusing Uzbek prayer names with numbers.
-    right_column = original.crop((int(original.width * 0.50), 0, original.width, original.height))
-    scale = max(3, min(6, 1800 // max(right_column.width, 1)))
-    right_column = right_column.resize(
-        (right_column.width * scale, right_column.height * scale), Image.Resampling.LANCZOS
-    )
-    right_column = ImageOps.autocontrast(right_column)
-    right_column = ImageEnhance.Contrast(right_column).enhance(1.7)
-    right_column = right_column.filter(ImageFilter.UnsharpMask(radius=1, percent=200, threshold=2))
-
-    numeric_text = pytesseract.image_to_string(
-        right_column,
-        lang="eng",
-        config="--oem 1 --psm 6 -c tessedit_char_whitelist=0123456789:.-",
-    )
-    ocr_lines = [line.strip() for line in numeric_text.splitlines() if line.strip()]
-    times: list[str] = []
-    for line in ocr_lines:
-        compact = re.sub(r"\s+", "", line)
-        if DATE_RE.search(compact):
-            continue
-        matches = list(TIME_RE.finditer(line))
-        if len(matches) != 1:
-            continue
-        match = matches[0]
-        times.append(f"{int(match.group(1)):02d}:{int(match.group(2)):02d}")
-
-    if len(times) not in (5, 6):
-        raise ValueError(
-            f"5 yoki 6 ta vaqt o‘qilmadi (topildi: {len(times)}): "
-            f"{' | '.join(ocr_lines[:12])}"
-        )
-    minutes = [int(value[:2]) * 60 + int(value[3:]) for value in times]
+    if len(found) not in (5, 6):
+        return None
+    minutes = [int(value[:2]) * 60 + int(value[3:]) for value in found]
     if any(later <= earlier for earlier, later in zip(minutes, minutes[1:])):
-        raise ValueError("Vaqtlar ketma-ketligi shubhali.")
-    return times, heading_text + "\n" + "\n".join(ocr_lines)
+        return None
+    return found
 
+
+def read_times(image_bytes: bytes) -> tuple[list[str], str]:
+    """OCR the whole poster and both halves; layouts differ between weekly Telegram posters."""
+    original = Image.open(io.BytesIO(image_bytes)).convert("L")
+    heading = ImageOps.autocontrast(
+        original.resize((original.width * 4, original.height * 4), Image.Resampling.LANCZOS)
+    )
+    heading_text = pytesseract.image_to_string(heading, lang="eng", config="--oem 1 --psm 11")
+
+    enhanced = ImageOps.autocontrast(original)
+    enhanced = ImageEnhance.Contrast(enhanced).enhance(1.6)
+    enhanced = enhanced.filter(ImageFilter.UnsharpMask(radius=1, percent=180, threshold=2))
+
+    # Try the whole image first (many current posters use horizontal rows), then both
+    # halves for posters that place prayer names and values in separate columns.
+    variants = [("whole", enhanced)]
+    midpoint = max(1, enhanced.width // 2)
+    variants.extend([
+        ("left", enhanced.crop((0, 0, midpoint, enhanced.height))),
+        ("right", enhanced.crop((midpoint, 0, enhanced.width, enhanced.height))),
+    ])
+
+    attempts: list[str] = []
+    for label, variant in variants:
+        scale = max(2, min(5, 1900 // max(variant.width, 1)))
+        enlarged = variant.resize(
+            (variant.width * scale, variant.height * scale), Image.Resampling.LANCZOS
+        )
+        for psm in (6, 11):
+            numeric_text = pytesseract.image_to_string(
+                enlarged,
+                lang="eng",
+                config=f"--oem 1 --psm {psm} -c tessedit_char_whitelist=0123456789:.-/",
+            )
+            attempts.append(f"[{label}/psm{psm}]\n{numeric_text}")
+            times = _times_from_ocr_text(numeric_text)
+            if times:
+                return times, heading_text + "\n" + "\n".join(attempts)
+
+    details = " | ".join(" ".join(x.split())[:180] for x in attempts[-6:])
+    raise ValueError("5 yoki 6 ta ketma-ket vaqt o‘qilmadi. OCR: " + details)
 
 def poster_photo(node) -> str | None:
-    for el in node.select(".tgme_widget_message_photo_wrap, .tgme_widget_message_video_thumb"):
-        m = re.search(r"url\(['\"]?(.*?)['\"]?\)", el.get("style", ""), re.I)
+    # Telegram has used both CSS background images and lazy-loaded img tags.
+    for el in node.select(
+        ".tgme_widget_message_photo_wrap, .tgme_widget_message_video_thumb, "
+        ".tgme_widget_message_photo, [style*='background-image']"
+    ):
+        style = el.get("style", "")
+        m = re.search(r"url\\(['\"]?(.*?)['\"]?\\)", style, re.I)
         if m:
             return urljoin("https://t.me", m.group(1).replace("&amp;", "&"))
-    img = node.select_one(".tgme_widget_message_photo img")
-    if img:
-        return urljoin("https://t.me", img.get("src") or img.get("data-src") or "")
+    for img in node.select(".tgme_widget_message_photo img, img[src], img[data-src]"):
+        candidate = img.get("data-src") or img.get("src") or ""
+        if candidate and not candidate.startswith("data:"):
+            return urljoin("https://t.me", candidate.replace("&amp;", "&"))
     return None
 
 
-def get_posts() -> list[dict]:
-    r = HTTP.get(PREVIEW, timeout=25)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.text, "html.parser")
-    nodes = soup.select(".tgme_widget_message[data-post]")
-    if not nodes:
-        raise RuntimeError("Telegram public preview postlarni ko‘rsatmadi.")
-    posts = []
-    for n in nodes:
-        photo = poster_photo(n)
-        ref = n.get("data-post", "")
-        m = re.search(r"/(\d+)$", ref)
-        if not photo or not m:
-            continue
-        cap = n.select_one(".tgme_widget_message_text")
-        tm = n.select_one("time[datetime]")
-        posts.append({
-            "id": int(m.group(1)),
-            "photo": photo,
-            "caption": cap.get_text(" ", strip=True) if cap else "",
-            "published": tm.get("datetime", "") if tm else "",
-        })
-    return sorted(posts, key=lambda p: p["id"], reverse=True)
+def get_posts(max_pages: int = 8) -> list[dict]:
+    """Read several public-preview pages so a busy channel cannot hide the latest poster."""
+    posts_by_id: dict[int, dict] = {}
+    seen_page_oldest: set[int] = set()
+    before: int | None = None
 
+    for page_number in range(max_pages):
+        params = {"before": before} if before is not None else None
+        response = HTTP.get(PREVIEW, params=params, timeout=25)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        nodes = soup.select(".tgme_widget_message[data-post]")
+        if not nodes:
+            if page_number == 0:
+                raise RuntimeError("Telegram public preview postlarni ko‘rsatmadi.")
+            break
+
+        page_ids: list[int] = []
+        for node in nodes:
+            reference = node.get("data-post", "")
+            match = re.search(r"/(\\d+)$", reference)
+            if not match:
+                continue
+            post_id = int(match.group(1))
+            page_ids.append(post_id)
+            if post_id in posts_by_id:
+                continue
+
+            photo = poster_photo(node)
+            caption_node = node.select_one(".tgme_widget_message_text")
+            time_node = node.select_one("time[datetime]")
+            posts_by_id[post_id] = {
+                "id": post_id,
+                "photo": photo,
+                "caption": caption_node.get_text(" ", strip=True) if caption_node else "",
+                "published": time_node.get("datetime", "") if time_node else "",
+            }
+
+        if not page_ids:
+            break
+        oldest_id = min(page_ids)
+        if oldest_id in seen_page_oldest or (before is not None and oldest_id >= before):
+            LOG.warning("Telegram pagination keyingi eski sahifaga o‘tmadi; takroriy sahifa to‘xtatildi.")
+            break
+        seen_page_oldest.add(oldest_id)
+        if len(nodes) < 5:
+            break
+        before = oldest_id
+
+    posts = sorted(posts_by_id.values(), key=lambda post: post["id"], reverse=True)
+    photos = [post for post in posts if post["photo"]]
+    LOG.info(
+        "Telegram preview tekshirildi: %d post, %d rasmli post; eng yangi ID=%s; rasmli IDlar=%s",
+        len(posts), len(photos), posts[0]["id"] if posts else "yo‘q",
+        ",".join(str(post["id"]) for post in photos[:15]) or "yo‘q",
+    )
+    return photos
 
 def update_json(start: date, end: date, times: list[str], post: dict) -> bool:
     if not REPO or not TOKEN:
@@ -219,20 +274,30 @@ def main() -> None:
     today = datetime.now(TZ).date()
     failures = []
     posts = get_posts()
+    if not posts:
+        raise RuntimeError("Telegram preview sahifalarida rasmli post topilmadi.")
+
     for post in posts:
         try:
-            img = HTTP.get(post["photo"], timeout=30)
-            img.raise_for_status()
-            times, poster_text = read_times(img.content)
+            image_response = HTTP.get(post["photo"], timeout=30)
+            image_response.raise_for_status()
+            times, poster_text = read_times(image_response.content)
             start, end = parse_week(post["caption"] + " " + poster_text, today)
-            LOG.info("Validated poster #%s for %s–%s; times=%s", post["id"], start, end, ", ".join(times))
-            update_json(start, end, times, post)
-            return
-        except Exception as e:
-            failures.append(f"#{post['id']}: {e}")
-    details = " | ".join(failures[:4]) if failures else "Rasmli jadval yo‘q."
-    raise RuntimeError("Yaroqli jadval topilmadi, eski JSON saqlandi. " + details)
+            LOG.info(
+                "Yaroqli jadval: post #%s, %s–%s; vaqtlar=%s",
+                post["id"], start, end, ", ".join(times),
+            )
+            changed = update_json(start, end, times, post)
+            if changed:
+                return
+            LOG.info("Post #%s JSON’ni o‘zgartirmadi; keyingi nomzod tekshiriladi.", post["id"])
+        except Exception as error:
+            detail = f"#{post['id']}: {error}"
+            failures.append(detail)
+            LOG.info("Post jadval sifatida qabul qilinmadi: %s", detail)
 
+    details = " | ".join(failures[:12]) if failures else "Yangi tasdiqlangan jadval topilmadi."
+    raise RuntimeError("Yangi jadval tasdiqlanmadi; eski JSON saqlandi. " + details)
 
 if __name__ == "__main__":
     main()
