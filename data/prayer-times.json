@@ -5,81 +5,82 @@
   "timezone": "Asia/Tashkent",
   "weekStart": "2026-11-06",
   "weekEnd": "2026-11-12",
-  "updatedAt": "2026-11-05T23:36:30+05:00",
-  "source": "Ommaviy Telegram preview: @namozvaqti365/1064",
-  "sourcePostId": "1064",
-  "sourcePublishedAt": "2026-11-05T10:56:16+00:00",
+  "updatedAt": "2026-11-05T23:47:04+05:00",
+  "source": "Rasmiy namoz-vaqti.uz JSON API; Telegram haftalik e’lon: @namozvaqti365/1065",
+  "scheduleSource": "https://namoz-vaqti.uz/",
+  "sourcePostId": "1065",
+  "sourcePublishedAt": "2026-11-05T10:56:25+00:00",
   "sourceTimes": [
-    "06:15",
-    "07:10",
-    "13:00",
-    "15:30",
-    "17:10",
-    "18:55"
+    "05:28",
+    "06:48",
+    "11:55",
+    "15:19",
+    "17:05",
+    "18:21"
   ],
   "days": [
     {
       "date": "2026-11-06",
-      "fajr": "06:15",
-      "sunrise": "07:10",
-      "dhuhr": "13:00",
-      "asr": "15:30",
-      "maghrib": "17:10",
-      "isha": "18:55"
+      "fajr": "05:28",
+      "sunrise": "06:48",
+      "dhuhr": "11:55",
+      "asr": "15:19",
+      "maghrib": "17:05",
+      "isha": "18:21"
     },
     {
       "date": "2026-11-07",
-      "fajr": "06:15",
-      "sunrise": "07:10",
-      "dhuhr": "13:00",
-      "asr": "15:30",
-      "maghrib": "17:10",
-      "isha": "18:55"
+      "fajr": "05:29",
+      "sunrise": "06:50",
+      "dhuhr": "11:55",
+      "asr": "15:18",
+      "maghrib": "17:03",
+      "isha": "18:20"
     },
     {
       "date": "2026-11-08",
-      "fajr": "06:15",
-      "sunrise": "07:10",
-      "dhuhr": "13:00",
-      "asr": "15:30",
-      "maghrib": "17:10",
-      "isha": "18:55"
+      "fajr": "05:30",
+      "sunrise": "06:51",
+      "dhuhr": "11:55",
+      "asr": "15:17",
+      "maghrib": "17:02",
+      "isha": "18:19"
     },
     {
       "date": "2026-11-09",
-      "fajr": "06:15",
-      "sunrise": "07:10",
-      "dhuhr": "13:00",
-      "asr": "15:30",
-      "maghrib": "17:10",
-      "isha": "18:55"
+      "fajr": "05:31",
+      "sunrise": "06:52",
+      "dhuhr": "11:55",
+      "asr": "15:16",
+      "maghrib": "17:01",
+      "isha": "18:19"
     },
     {
       "date": "2026-11-10",
-      "fajr": "06:15",
-      "sunrise": "07:10",
-      "dhuhr": "13:00",
-      "asr": "15:30",
-      "maghrib": "17:10",
-      "isha": "18:55"
+      "fajr": "05:32",
+      "sunrise": "06:53",
+      "dhuhr": "11:55",
+      "asr": "15:15",
+      "maghrib": "17:00",
+      "isha": "18:18"
     },
     {
       "date": "2026-11-11",
-      "fajr": "06:15",
-      "sunrise": "07:10",
-      "dhuhr": "13:00",
-      "asr": "15:30",
-      "maghrib": "17:10",
-      "isha": "18:55"
+      "fajr": "05:33",
+      "sunrise": "06:54",
+      "dhuhr": "11:55",
+      "asr": "15:14",
+      "maghrib": "16:59",
+      "isha": "18:17"
     },
     {
       "date": "2026-11-12",
-      "fajr": "06:15",
-      "sunrise": "07:10",
-      "dhuhr": "13:00",
-      "asr": "15:30",
-      "maghrib": "17:10",
-      "isha": "18:55"
+      "fajr": "05:34",
+      "sunrise": "06:56",
+      "dhuhr": "11:55",
+      "asr": "15:13",
+      "maghrib": "16:58",
+      "isha": "18:16"
     }
   ]
 }
