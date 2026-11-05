@@ -122,17 +122,17 @@ def _times_from_ocr_text(text: str) -> list[str] | None:
 
 
 def _ocr_time_boxes(image: Image.Image, psm: int) -> list[dict]:
-    """Read positioned time cells; never sort all poster times globally."""
+    """Read only complete, positioned time cells; do not guess split numbers."""
     data = pytesseract.image_to_data(
         image, lang="eng",
         config=f"--oem 1 --psm {psm} -c tessedit_char_whitelist=0123456789:-",
         output_type=Output.DICT,
     )
     boxes: list[dict] = []
-    line_groups: dict[tuple[int, int, int], list[dict]] = defaultdict(list)
     for i, raw in enumerate(data.get("text", [])):
         text = str(raw or "").strip()
-        if not text:
+        value = _normalise_ocr_time(text)
+        if not value:
             continue
         try:
             confidence = float(data["conf"][i])
@@ -142,46 +142,13 @@ def _ocr_time_boxes(image: Image.Image, psm: int) -> list[dict]:
             continue
         if confidence < 25 or width <= 0 or height <= 0:
             continue
-        item = {
-            "text": text, "left": left, "top": top, "width": width, "height": height,
-            "cx": left + width / 2, "cy": top + height / 2, "confidence": confidence,
-        }
-        value = _normalise_ocr_time(text)
-        if value:
-            boxes.append({**item, "time": value})
-        try:
-            line_key = (int(data["block_num"][i]), int(data["par_num"][i]), int(data["line_num"][i]))
-            line_groups.setdefault(line_key, []).append(item)
-        except (KeyError, ValueError, TypeError):
-            pass
-
-    # Recover HH:MM where Tesseract split it into separate hour and minute words.
-    for line in line_groups.values():
-        line.sort(key=lambda item: item["left"])
-        for first, second in zip(line, line[1:]):
-            gap = second["left"] - (first["left"] + first["width"])
-            if gap > max(18, int(max(first["height"], second["height"]) * 1.8)):
-                continue
-            if not re.fullmatch(r"\d{1,2}", first["text"]) or not re.fullmatch(r"\d{2}", second["text"]):
-                continue
-            value = _normalise_ocr_time(first["text"] + ":" + second["text"])
-            if value:
-                boxes.append({
-                    "text": first["text"] + ":" + second["text"],
-                    "left": first["left"], "top": min(first["top"], second["top"]),
-                    "width": second["left"] + second["width"] - first["left"],
-                    "height": max(first["height"], second["height"]),
-                    "cx": (first["left"] + second["left"] + second["width"]) / 2,
-                    "cy": (first["top"] + second["top"]) / 2,
-                    "confidence": min(first["confidence"], second["confidence"]),
-                    "time": value,
-                })
-    unique: dict[tuple[str, int, int], dict] = {}
-    for box in boxes:
-        key = (box["time"], round(box["cx"] / 8), round(box["cy"] / 8))
-        if key not in unique or box["confidence"] > unique[key]["confidence"]:
-            unique[key] = box
-    return list(unique.values())
+        boxes.append({
+            "text": text, "time": value,
+            "left": left, "top": top, "width": width, "height": height,
+            "cx": left + width / 2, "cy": top + height / 2,
+            "confidence": confidence,
+        })
+    return boxes
 
 
 def _cluster_boxes(boxes: list[dict], axis: str) -> list[list[dict]]:
@@ -288,6 +255,20 @@ def read_week_schedule(image_bytes: bytes, start: date, end: date) -> list[dict]
         axis, days[0]["date"], ", ".join(days[0][key] for key in prayer_ids),
     )
     return days
+
+
+def read_week_heading(image_bytes: bytes) -> str:
+    """Read only the printed week/date heading; prayer times come from read_week_schedule."""
+    original = Image.open(io.BytesIO(image_bytes)).convert("L")
+    enlarged = ImageOps.autocontrast(
+        original.resize((original.width * 5, original.height * 5), Image.Resampling.LANCZOS)
+    )
+    outputs = []
+    for psm in (11, 6, 12):
+        outputs.append(
+            pytesseract.image_to_string(enlarged, lang="eng", config=f"--oem 1 --psm {psm}")
+        )
+    return "\n".join(outputs)
 
 
 def poster_photo(node) -> str | None:
