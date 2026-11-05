@@ -94,7 +94,7 @@ class PublicChannelParserTests(unittest.TestCase):
             def json(self):
                 return {"sha": "existing-blob-sha", "content": encoded}
 
-        post = {"id": 1064, "photo": "https://example.test/poster.jpg", "caption": ""}
+        post = {"id": 1064, "photo": "https://example.test/poster.jpg", "caption": "", "published": ""}
         with patch.object(sync, "REPO", "owner/repo"), \
              patch.object(sync, "TOKEN", "test-token"), \
              patch.object(sync.HTTP, "get", return_value=Response()), \
