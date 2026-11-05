@@ -11,7 +11,7 @@ Baliqchi tumani uchun o‘zbek tilidagi namoz vaqtlari, azon eslatmalari, qibla 
 ## Ilova xususiyatlari
 
 - O‘zbekcha interfeys va Baliqchi tumani uchun boshlang‘ich sozlama.
-- Bomdod, Peshin, Asr, Shom, Xufton va quyosh chiqishi.
+- Bomdod, Peshin, Asr, Shom va Xufton.
 - Hisoblash usulini tanlash, Hanafi/standart Asr sozlamasi, joylashuv va qo‘lda vaqt tuzatish.
 - Har namoz uchun azon yoqish/o‘chirish, audio fayl tanlash va sinovdan o‘tkazish.
 - Premium Qibla kompassi: Ka’ba tasvirli yo‘nalish belgisi, telefon sensori va joylashuvdan foydalanadi.
@@ -21,18 +21,17 @@ Baliqchi tumani uchun o‘zbek tilidagi namoz vaqtlari, azon eslatmalari, qibla 
 - Ilova ichiga joylangan Manrope shrift oilasi — barcha sahifalarda internetga bog‘liq bo‘lmagan tipografika.
 - Namoz jadvalini internet orqali yangilash va mahalliy xotirada saqlash.
 
-## Telegram orqali haftani aniqlash va kunlik jadvalni yangilash
+## Telegram orqali haftalik jadvalni yangilash
 
-Kanal sizniki bo‘lishi yoki unga administrator bo‘lishingiz shart emas. GitHub Actions Telegram’ning ochiq web-preview sahifasini — `https://t.me/s/namozvaqti365` — taxminan har 3 soatda tekshiradi.
+GitHub Actions har 3 soatda `https://t.me/s/namozvaqti365` ochiq Telegram preview sahifasini tekshiradi.
 
-- Telegram postining rasmidan faqat haftaning sanasi aniqlanadi. OCR o‘qigan raqamlar namoz vaqti sifatida ishlatilmaydi.
-- Hafta sanasi topilgach, vaqtlar `namoz-vaqti.uz` JSON API’dan aynan Baliqchi tumani uchun kunma-kun olinadi.
-- Har bir kunning Bomdod, Quyosh, Peshin, Asr, Shom va Xufton vaqtlari alohida saqlanadi.
-- Hudud mosligi, sana oralig‘i va vaqtlarning ketma-ketligi tekshiriladi. Ma’lumot to‘liq va mantiqan to‘g‘ri bo‘lmasa, eski JSON o‘zgartirilmaydi.
-- Android ilovasi jadvalni ochilganda yuklaydi va WorkManager orqali davriy yangilab turadi.
+- Hafta sanasi Telegram postidagi rasm sarlavhasidan aniqlanadi.
+- 7 kunning har biri uchun **Bomdod, Peshin, Asr, Shom va Xufton** vaqtlari bevosita Telegram rasmining o‘zidan OCR orqali olinadi.
+- OCR umumiy vaqtlar ro‘yxatini saralamaydi: jadvalning joylashuvi bo‘yicha 7 kun va har bir kun uchun 5 ta vaqt ajratiladi.
+- Quyosh chiqishi qiymati olinmaydi va jadvalga yozilmaydi.
+- Rasmda barcha 35 ta vaqt ishonchli aniqlanmasa, noto‘g‘ri jadval e’lon qilinmaydi; avvalgi ma’lumot saqlanadi.
 
-**Amaldagi jadval:** Telegram posti `@namozvaqti365/1065` yangi haftani aniqladi; 2026-yil 6–12-noyabr kunlik qiymatlari `namoz-vaqti.uz` API’dan olindi.
-
+**Vaqtlar uchun yagona manba:** `@namozvaqti365` Telegram kanalidagi haftalik rasm. Tashqi namoz API yoki boshqa saytlardan vaqt olinmaydi.
 ## APK’ni o‘rnatish
 
 1. Actions sahifasidan `Namoz-Vaqtlari-APK` artefakt ZIP’ini yuklab oling.
@@ -46,7 +45,7 @@ Bu hozircha **debug APK**. Google Play uchun alohida release imzolash kaliti bil
 
 - `app/` — Kotlin Android ilovasi va HTML/CSS/JS WebView interfeysi.
 - `data/prayer-times.json` — barcha o‘rnatilgan ilovalar uchun markaziy jadval.
-- `telegram_sync/public_channel_sync.py` — Telegram haftasini aniqlash va rasmiy kunlik JSON API’dan jadval olish.
+- `telegram_sync/public_channel_sync.py` — Telegram haftasini aniqlash va rasmiy Telegram rasmining OCR tahlili orqali jadval olish.
 - `telegram_sync/tests/` — sana, preview va OCR sinovlari.
 - `.github/workflows/sync-public-telegram.yml` — jadval yangilash workflow’i.
 - `.github/workflows/build-apk.yml` — APK yig‘ish workflow’i.
