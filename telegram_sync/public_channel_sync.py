@@ -128,6 +128,34 @@ def _times_from_ocr_text(text: str) -> list[str] | None:
     return found
 
 
+def _consensus_times(ocr_texts: list[str]) -> list[str] | None:
+    """Combine distinct values from independent OCR passes using majority voting."""
+    consensus: Counter[str] = Counter()
+    single_candidates: list[list[str]] = []
+    for text in ocr_texts:
+        values = _time_values_from_ocr_text(text)
+        for value in values:
+            consensus[value] += 1
+        if len(values) in (5, 6):
+            single_candidates.append(values)
+
+    trusted = [value for value, votes in consensus.items() if votes >= 2]
+    if len(trusted) > 6:
+        trusted = sorted(
+            trusted,
+            key=lambda value: (-consensus[value], int(value[:2]) * 60 + int(value[3:])),
+        )[:6]
+    trusted.sort(key=lambda value: int(value[:2]) * 60 + int(value[3:]))
+    if len(trusted) in (5, 6):
+        return trusted
+    if single_candidates:
+        return max(
+            single_candidates,
+            key=lambda values: (len(values), sum(consensus[v] for v in values)),
+        )
+    return None
+
+
 def read_times(image_bytes: bytes) -> tuple[list[str], str]:
     """OCR whole poster/columns and combine repeated time cells from independent passes."""
     original = Image.open(io.BytesIO(image_bytes)).convert("L")
@@ -148,8 +176,7 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
     ])
 
     attempts: list[str] = []
-    consensus: Counter[str] = Counter()
-    single_candidates: list[list[str]] = []
+    ocr_passes: list[str] = []
     for label, variant in variants:
         scale = max(2, min(5, 1900 // max(variant.width, 1)))
         enlarged = variant.resize(
@@ -162,28 +189,13 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
                 config=f"--oem 1 --psm {psm} -c tessedit_char_whitelist=0123456789:.-/",
             )
             attempts.append(f"[{label}/psm{psm}]\n{numeric_text}")
-            values = _time_values_from_ocr_text(numeric_text)
-            for value in values:
-                consensus[value] += 1
-            if len(values) in (5, 6):
-                single_candidates.append(values)
+            ocr_passes.append(numeric_text)
 
-    # A weekly poster often repeats one time in every day column. Vote across
-    # independent OCR layouts so one noisy glyph (e.g. 13:30) cannot override
-    # a value confirmed by the whole image and column crops.
-    trusted = [value for value, votes in consensus.items() if votes >= 2]
-    if len(trusted) > 6:
-        trusted = sorted(
-            trusted,
-            key=lambda value: (-consensus[value], int(value[:2]) * 60 + int(value[3:])),
-        )[:6]
-    trusted.sort(key=lambda value: int(value[:2]) * 60 + int(value[3:]))
-    if len(trusted) in (5, 6):
+    # Weekly posters repeat the same values in several columns. Majority voting
+    # across layouts rejects isolated OCR mistakes while recovering repeated cells.
+    trusted = _consensus_times(ocr_passes)
+    if trusted:
         return trusted, heading_text + "\n" + "\n".join(attempts)
-
-    if single_candidates:
-        best = max(single_candidates, key=lambda values: (len(values), sum(consensus[v] for v in values)))
-        return best, heading_text + "\n" + "\n".join(attempts)
 
     details = " | ".join(" ".join(x.split())[:180] for x in attempts[-6:])
     raise ValueError("5 yoki 6 ta turli vaqt tasdiqlanmadi. OCR: " + details)
