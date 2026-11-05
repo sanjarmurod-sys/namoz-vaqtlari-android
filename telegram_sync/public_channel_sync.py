@@ -35,6 +35,7 @@ CITY_ID = os.getenv("CITY_ID", "baliqchi")
 CITY_NAME = os.getenv("CITY_NAME", "Baliqchi tumani")
 PREVIEW = f"https://t.me/s/{CHANNEL}"
 API = f"https://api.github.com/repos/{REPO}/contents/{DATA_PATH}"
+OFFICIAL_PRAYER_API = "https://namoz-vaqti.uz/index.php"
 DATE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?")
 DATE_SAME_MONTH_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?")
 TIME_RE = re.compile(r"(?<!\d)(2[0-3]|[01]?\d)\s*[-:.,٫]\s*([0-5]\d)(?!\d)")
@@ -200,6 +201,117 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
     details = " | ".join(" ".join(x.split())[:180] for x in attempts[-6:])
     raise ValueError("5 yoki 6 ta turli vaqt tasdiqlanmadi. OCR: " + details)
 
+def read_week_heading(image_bytes: bytes) -> str:
+    """Read only the poster heading/date; prayer-time OCR is deliberately not trusted."""
+    original = Image.open(io.BytesIO(image_bytes)).convert("L")
+    enlarged = ImageOps.autocontrast(
+        original.resize((original.width * 5, original.height * 5), Image.Resampling.LANCZOS)
+    )
+    outputs = []
+    for psm in (11, 6, 12):
+        outputs.append(
+            pytesseract.image_to_string(enlarged, lang="eng", config=f"--oem 1 --psm {psm}")
+        )
+    return "\n".join(outputs)
+
+
+def _api_clock(value: object, field: str) -> str:
+    text = str(value or "").strip()
+    match = re.fullmatch(r"([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?", text)
+    if not match:
+        raise ValueError(f"Rasmiy API’da {field} vaqti noto‘g‘ri: {text!r}")
+    return f"{int(match.group(1)):02d}:{match.group(2)}"
+
+
+def fetch_official_days(start: date, end: date) -> list[dict]:
+    """Fetch day-by-day Baliqchi values from the official Namoz Vaqti JSON API."""
+    rows_by_date: dict[date, dict] = {}
+    cursor = date(start.year, start.month, 1)
+    months: list[tuple[int, int]] = []
+    while cursor <= end:
+        months.append((cursor.year, cursor.month))
+        if cursor.month == 12:
+            cursor = date(cursor.year + 1, 1, 1)
+        else:
+            cursor = date(cursor.year, cursor.month + 1, 1)
+
+    field_map = (
+        ("fajr", "bomdod"),
+        ("sunrise", "quyosh"),
+        ("dhuhr", "peshin"),
+        ("asr", "asr"),
+        ("maghrib", "shom"),
+        ("isha", "xufton"),
+    )
+    for year, month in months:
+        response = HTTP.get(
+            OFFICIAL_PRAYER_API,
+            params={
+                "region": CITY_ID,
+                "lang": "lotin",
+                "period": f"{year:04d}-{month:02d}",
+                "format": "json",
+            },
+            headers={"Accept": "application/json", "Cache-Control": "no-cache"},
+            timeout=25,
+        )
+        response.raise_for_status()
+        body = response.json()
+        if not isinstance(body, dict):
+            raise ValueError("Rasmiy API JSON obyekt qaytarmadi.")
+        region = body.get("meta", {}).get("region", {})
+        returned_slug = str(region.get("slug", "")).strip().lower()
+        if returned_slug and returned_slug != CITY_ID.lower():
+            raise ValueError(
+                f"Rasmiy API boshqa hududni qaytardi: {region.get('name', returned_slug)}"
+            )
+        period_rows = body.get("period_table")
+        if not isinstance(period_rows, list) or not period_rows:
+            raise ValueError("Rasmiy API’da period_table topilmadi.")
+
+        for row in period_rows:
+            try:
+                raw_date = str(row.get("date", "")).strip()
+                try:
+                    row_date = datetime.strptime(raw_date, "%d.%m.%Y").date()
+                except ValueError:
+                    row_date = date.fromisoformat(raw_date)
+                raw_times = row.get("times") or {}
+                mapped = {
+                    target: _api_clock(raw_times.get(source), source)
+                    for target, source in field_map
+                }
+            except Exception as error:
+                raise ValueError(f"Rasmiy API jadval qatori noto‘g‘ri: {error}") from error
+
+            numeric = [int(mapped[key][:2]) * 60 + int(mapped[key][3:]) for key, _ in field_map]
+            if any(later <= earlier for earlier, later in zip(numeric, numeric[1:])):
+                raise ValueError(f"{row_date} sanasida vaqtlar ketma-ketligi noto‘g‘ri.")
+            rows_by_date[row_date] = {"date": row_date.isoformat(), **mapped}
+
+    days = []
+    for offset in range((end - start).days + 1):
+        current = start + timedelta(days=offset)
+        if current not in rows_by_date:
+            raise ValueError(f"Rasmiy API’da {current.isoformat()} sanasi yo‘q.")
+        days.append(rows_by_date[current])
+
+    # A full weekly table with all six values identical is almost certainly a
+    # mistaken OCR extraction or stale/incorrect API response; never publish it.
+    signatures = {
+        tuple(day[key] for key in ("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"))
+        for day in days
+    }
+    if len(days) >= 5 and len(signatures) == 1:
+        raise ValueError("Haftaning barcha kunlari aynan bir xil; jadval shubhali.")
+    LOG.info(
+        "Rasmiy API tekshirildi: region=%s, kunlar=%d, birinchi kun=%s, vaqtlar=%s",
+        CITY_ID, len(days), days[0]["date"],
+        ", ".join(days[0][key] for key in ("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha")),
+    )
+    return days
+
+
 def poster_photo(node) -> str | None:
     # Telegram has used both CSS background images and lazy-loaded img tags.
     for el in node.select(
@@ -275,9 +387,12 @@ def get_posts(max_pages: int = 3) -> list[dict]:
     )
     return photos
 
-def update_json(start: date, end: date, times: list[str], post: dict) -> bool:
+def update_json(start: date, end: date, days: list[dict], post: dict) -> bool:
     if not REPO or not TOKEN:
         raise RuntimeError("GITHUB_REPOSITORY va GITHUB_TOKEN sozlamalari kerak.")
+    if len(days) != (end - start).days + 1:
+        raise ValueError("Rasmiy jadvaldagi kunlar soni sana oralig‘iga mos emas.")
+
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {TOKEN}",
@@ -298,41 +413,56 @@ def update_json(start: date, end: date, times: list[str], post: dict) -> bool:
         except (TypeError, ValueError):
             old_week = None
         if old_week and old_week > start:
-            LOG.warning("Eski post yangi jadvalni almashtirmaydi.")
+            LOG.warning("Eski Telegram posti yangi jadvalni almashtirmaydi.")
             return False
     elif get.status_code != 404:
         raise RuntimeError(f"GitHub jadvalini o‘qishda xato: {get.status_code}")
 
-    keys = ("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha") if len(times) == 6 else (
-        "fajr", "dhuhr", "asr", "maghrib", "isha"
-    )
-    times_obj = dict(zip(keys, times))
-    days = [{"date": (start+timedelta(days=i)).isoformat(), **times_obj} for i in range(7)]
     if (
         existing.get("weekStart") == start.isoformat()
         and existing.get("days") == days
         and str(existing.get("sourcePostId", "")) == str(post["id"])
     ):
-        LOG.info("Joriy haftalik jadval va manba posti o‘zgarmagan.")
+        LOG.info("Joriy rasmiy haftalik jadval va Telegram manbasi o‘zgarmagan.")
         return False
+
+    first = days[0]
+    source_times = [
+        first[key] for key in ("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha")
+    ]
     payload = {
-        "schemaVersion": 1, "cityId": CITY_ID, "cityName": CITY_NAME, "timezone": TZ.key,
-        "weekStart": start.isoformat(), "weekEnd": end.isoformat(),
+        "schemaVersion": 1,
+        "cityId": CITY_ID,
+        "cityName": CITY_NAME,
+        "timezone": TZ.key,
+        "weekStart": start.isoformat(),
+        "weekEnd": end.isoformat(),
         "updatedAt": datetime.now(TZ).isoformat(timespec="seconds"),
-        "source": f"Ommaviy Telegram preview: @{CHANNEL}/{post['id']}",
-        "sourcePostId": str(post["id"]), "sourcePublishedAt": post.get("published", ""),
-        "sourceTimes": times, "days": days,
+        "source": f"Rasmiy namoz-vaqti.uz JSON API; Telegram haftalik e’lon: @{CHANNEL}/{post['id']}",
+        "scheduleSource": "https://namoz-vaqti.uz/",
+        "sourcePostId": str(post["id"]),
+        "sourcePublishedAt": post.get("published", ""),
+        "sourceTimes": source_times,
+        "days": days,
     }
-    data = base64.b64encode((json.dumps(payload, ensure_ascii=False, indent=2)+"\n").encode()).decode()
-    put = {"message": f"Baliqchi namoz jadvali {start}–{end}", "content": data, "branch": BRANCH}
+    data = base64.b64encode(
+        (json.dumps(payload, ensure_ascii=False, indent=2) + "\n").encode()
+    ).decode()
+    put = {
+        "message": f"Baliqchi rasmiy namoz jadvali {start}–{end}",
+        "content": data,
+        "branch": BRANCH,
+    }
     if sha:
         put["sha"] = sha
     res = HTTP.put(API, headers=headers, json=put, timeout=30)
     if res.status_code not in (200, 201):
         raise RuntimeError(f"GitHub JSON yangilashda xato: {res.status_code} {res.text[:300]}")
-    LOG.info("Jadval yangilandi: %s–%s, Telegram post #%s", start, end, post["id"])
+    LOG.info(
+        "Rasmiy kunlik jadval GitHub’ga yozildi: %s–%s, Telegram post #%s",
+        start, end, post["id"],
+    )
     return True
-
 
 def main() -> None:
     if not REPO or not TOKEN:
@@ -353,31 +483,33 @@ def main() -> None:
                 published_dt = published_dt.replace(tzinfo=TZ)
             published_date = published_dt.astimezone(TZ).date()
 
-            # Avoid OCR'ing old archive posters. A weekly schedule is published
-            # close to its effective week; the post date also anchors its year.
             if published_date < today - timedelta(days=21):
                 LOG.info("Eski arxiv posti tashlab ketildi: #%s (%s)", post["id"], published_date)
                 continue
 
             image_response = HTTP.get(post["photo"], timeout=18)
             image_response.raise_for_status()
-            times, poster_text = read_times(image_response.content)
-            start, end = parse_week(post["caption"] + " " + poster_text, today, published_date)
-            LOG.info(
-                "Yaroqli jadval: post #%s, e’lon=%s, %s–%s; vaqtlar=%s",
-                post["id"], published_date, start, end, ", ".join(times),
+            poster_heading = read_week_heading(image_response.content)
+            start, end = parse_week(
+                post["caption"] + " " + poster_heading, today, published_date
             )
-            changed = update_json(start, end, times, post)
+            LOG.info(
+                "Telegram e’loni tasdiqlandi: post #%s, %s–%s. Vaqtlar OCR’dan olinmaydi.",
+                post["id"], start, end,
+            )
+
+            days = fetch_official_days(start, end)
+            changed = update_json(start, end, days, post)
             if changed:
                 return
-            LOG.info("Post #%s JSON’ni o‘zgartirmadi; keyingi nomzod tekshiriladi.", post["id"])
+            LOG.info("Post #%s uchun rasmiy jadval allaqachon yangilangan.", post["id"])
         except Exception as error:
             detail = f"#{post['id']}: {error}"
             failures.append(detail)
-            LOG.info("Post jadval sifatida qabul qilinmadi: %s", detail)
+            LOG.info("Post jadval manbasi sifatida qabul qilinmadi: %s", detail)
 
     details = " | ".join(failures[:12]) if failures else "Yangi tasdiqlangan jadval topilmadi."
-    raise RuntimeError("Yangi jadval tasdiqlanmadi; eski JSON saqlandi. " + details)
+    raise RuntimeError("Rasmiy jadval yangilanmadi; avvalgi ma’lumot saqlandi. " + details)
 
 if __name__ == "__main__":
     main()
