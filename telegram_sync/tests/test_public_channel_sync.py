@@ -1,7 +1,10 @@
 import sys
 import unittest
+import base64
+import json
 from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 from io import BytesIO
 
 from PIL import Image, ImageDraw, ImageFont
@@ -66,6 +69,42 @@ class PublicChannelParserTests(unittest.TestCase):
             sync._times_from_ocr_text(text),
             ["06:10", "13:00", "15:40", "17:20", "19:05"],
         )
+
+
+    def test_edited_same_telegram_post_can_update_changed_times(self):
+        start = date(2026, 11, 6)
+        end = date(2026, 11, 12)
+        old_days = [
+            {"date": (start.fromordinal(start.toordinal() + i)).isoformat(),
+             "fajr": "06:11", "dhuhr": "13:00", "asr": "15:40",
+             "maghrib": "17:20", "isha": "19:05"}
+            for i in range(7)
+        ]
+        existing = {
+            "weekStart": start.isoformat(),
+            "sourcePostId": "1064",
+            "days": old_days,
+        }
+        encoded = base64.b64encode(json.dumps(existing).encode()).decode()
+
+        class Response:
+            status_code = 200
+            text = ""
+
+            def json(self):
+                return {"sha": "existing-blob-sha", "content": encoded}
+
+        post = {"id": 1064, "photo": "https://example.test/poster.jpg", "caption": ""}
+        with patch.object(sync, "REPO", "owner/repo"), \
+             patch.object(sync, "TOKEN", "test-token"), \
+             patch.object(sync.HTTP, "get", return_value=Response()), \
+             patch.object(sync.HTTP, "put", return_value=Response()) as put:
+            changed = sync.update_json(
+                start, end, ["06:10", "13:00", "15:40", "17:20", "19:05"], post
+            )
+
+        self.assertTrue(changed)
+        put.assert_called_once()
 
 
 if __name__ == "__main__":
