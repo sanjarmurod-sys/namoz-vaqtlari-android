@@ -577,7 +577,7 @@ function getRemoteDay(day){if(!remoteSchedule||!settings.telegramSyncEnabled)ret
 function getTodayTimes(day=new Date()){
   const times=calculatePrayerTimes(day,settings.lat,settings.lon,settings.method,Number(settings.asr));
   const remote=getRemoteDay(day);
-  if(remote){for(const id of ['fajr','dhuhr','asr','maghrib','isha','sunrise'])if(remote[id])times[id]=dateFromClock(day,remote[id]);}
+  if(remote){for(const id of ['fajr','dhuhr','asr','maghrib','isha'])if(remote[id])times[id]=dateFromClock(day,remote[id]);}
   for(const p of PRAYERS){if(settings.manual[p.id]&&settings.manualTimes[p.id])times[p.id]=dateFromClock(day,settings.manualTimes[p.id]);}
   return times;
 }
