@@ -95,13 +95,17 @@ class PublicChannelParserTests(unittest.TestCase):
                 return {"sha": "existing-blob-sha", "content": encoded}
 
         post = {"id": 1064, "photo": "https://example.test/poster.jpg", "caption": "", "published": ""}
+        new_days = [
+            {"date": (start.fromordinal(start.toordinal() + i)).isoformat(),
+             "fajr": "06:10", "sunrise": "07:10", "dhuhr": "13:00",
+             "asr": "15:40", "maghrib": "17:20", "isha": "19:05"}
+            for i in range(7)
+        ]
         with patch.object(sync, "REPO", "owner/repo"), \
              patch.object(sync, "TOKEN", "test-token"), \
              patch.object(sync.HTTP, "get", return_value=Response()), \
              patch.object(sync.HTTP, "put", return_value=Response()) as put:
-            changed = sync.update_json(
-                start, end, ["06:10", "13:00", "15:40", "17:20", "19:05"], post
-            )
+            changed = sync.update_json(start, end, new_days, post)
 
         self.assertTrue(changed)
         put.assert_called_once()
@@ -128,6 +132,86 @@ class PublicChannelParserTests(unittest.TestCase):
                 today=date(2026, 11, 5),
                 published_date=date(2025, 11, 13),
             )
+
+
+    def test_official_api_returns_distinct_day_by_day_values(self):
+        start = date(2026, 11, 6)
+        values = [
+            ("05:28", "06:48", "11:55", "15:19", "17:05", "18:21"),
+            ("05:29", "06:50", "11:55", "15:18", "17:03", "18:20"),
+            ("05:30", "06:51", "11:55", "15:17", "17:02", "18:19"),
+            ("05:31", "06:52", "11:55", "15:16", "17:01", "18:19"),
+            ("05:32", "06:53", "11:55", "15:15", "17:00", "18:18"),
+            ("05:33", "06:54", "11:55", "15:14", "16:59", "18:17"),
+            ("05:34", "06:56", "11:55", "15:13", "16:58", "18:16"),
+        ]
+        fields = ("bomdod", "quyosh", "peshin", "asr", "shom", "xufton")
+        body = {
+            "meta": {"region": {"slug": "baliqchi", "name": "Baliqchi tumani"}},
+            "period_table": [
+                {
+                    "date": f"{6+i:02d}.11.2026",
+                    "times": dict(zip(fields, row)),
+                }
+                for i, row in enumerate(values)
+            ],
+        }
+
+        class Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return body
+
+        with patch.object(sync.HTTP, "get", return_value=Response()) as get:
+            days = sync.fetch_official_days(date(2026, 11, 6), date(2026, 11, 12))
+
+        self.assertEqual(len(days), 7)
+        self.assertEqual(days[0]["fajr"], "05:28")
+        self.assertEqual(days[0]["sunrise"], "06:48")
+        self.assertEqual(days[-1]["isha"], "18:16")
+        get.assert_called_once()
+
+    def test_official_api_rejects_wrong_region(self):
+        class Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {
+                    "meta": {"region": {"slug": "toshkent", "name": "Toshkent"}},
+                    "period_table": [],
+                }
+
+        with patch.object(sync.HTTP, "get", return_value=Response()):
+            with self.assertRaisesRegex(ValueError, "boshqa hududni qaytardi"):
+                sync.fetch_official_days(date(2026, 11, 6), date(2026, 11, 12))
+
+    def test_official_api_rejects_flat_week(self):
+        fields = ("bomdod", "quyosh", "peshin", "asr", "shom", "xufton")
+        same = ("05:28", "06:48", "11:55", "15:19", "17:05", "18:21")
+        body = {
+            "meta": {"region": {"slug": "baliqchi"}},
+            "period_table": [
+                {
+                    "date": f"{6+i:02d}.11.2026",
+                    "times": dict(zip(fields, same)),
+                }
+                for i in range(7)
+            ],
+        }
+
+        class Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return body
+
+        with patch.object(sync.HTTP, "get", return_value=Response()):
+            with self.assertRaisesRegex(ValueError, "aynan bir xil"):
+                sync.fetch_official_days(date(2026, 11, 6), date(2026, 11, 12))
 
 
 if __name__ == "__main__":
