@@ -35,7 +35,6 @@ CITY_ID = os.getenv("CITY_ID", "baliqchi")
 CITY_NAME = os.getenv("CITY_NAME", "Baliqchi tumani")
 PREVIEW = f"https://t.me/s/{CHANNEL}"
 API = f"https://api.github.com/repos/{REPO}/contents/{DATA_PATH}"
-OFFICIAL_PRAYER_API = "https://namoz-vaqti.uz/index.php"
 DATE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?")
 DATE_SAME_MONTH_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?")
 TIME_RE = re.compile(r"(?<!\d)(2[0-3]|[01]?\d)\s*[-:.,٫]\s*([0-5]\d)(?!\d)")
@@ -92,222 +91,201 @@ def parse_week(
     return start, end
 
 
+def _normalise_ocr_time(value: str) -> str | None:
+    """Parse one time cell from a Telegram poster; dates with dots are not times."""
+    text = (value or "").strip().upper()
+    text = text.translate(str.maketrans({"O": "0", "Q": "0", "I": "1", "L": "1"}))
+    text = re.sub(r"[^0-9:\-]", "", text)
+    match = re.fullmatch(r"([01]?\d|2[0-3])[:-]([0-5]\d)", text)
+    if not match:
+        return None
+    return f"{int(match.group(1)):02d}:{match.group(2)}"
+
+
 def _time_values_from_ocr_text(text: str) -> list[str]:
-    """Return distinct OCR time values, ordered chronologically."""
-    found: set[str] = set()
-    for line in (text or "").splitlines():
-        cleaned = DATE_RE.sub(" ", line)
-        cleaned = DATE_SAME_MONTH_RE.sub(" ", cleaned)
-        # A lone date such as 06.11 must not be mistaken for the time 06:11.
-        cleaned = re.sub(r"(?<!\d)\d{1,2}\s*[./]\s*\d{1,2}(?:[./]\s*\d{2,4})?", " ", cleaned)
-        for match in TIME_RE.finditer(cleaned):
-            found.add(f"{int(match.group(1)):02d}:{int(match.group(2)):02d}")
-    return sorted(found, key=lambda value: int(value[:2]) * 60 + int(value[3:]))
-
-
-def _times_from_ocr_text(text: str) -> list[str] | None:
-    """Extract 5/6 distinct chronological prayer times from a weekly poster."""
-    values = _time_values_from_ocr_text(text)
-    return values if len(values) in (5, 6) else None
-
-def _times_from_ocr_text(text: str) -> list[str] | None:
-    """Extract 5/6 chronological prayer times from OCR output, including row/table layouts."""
-    found: list[str] = []
-    for line in (text or "").splitlines():
-        cleaned = DATE_RE.sub(" ", line)
-        cleaned = DATE_SAME_MONTH_RE.sub(" ", cleaned)
-        # A lone date such as 06.11 must not be mistaken for the time 06:11.
-        cleaned = re.sub(r"(?<!\d)\d{1,2}\s*[./]\s*\d{1,2}(?:[./]\s*\d{2,4})?(?!\d)", " ", cleaned)
-        for match in TIME_RE.finditer(cleaned):
-            found.append(f"{int(match.group(1)):02d}:{int(match.group(2)):02d}")
-
-    if len(found) not in (5, 6):
-        return None
-    minutes = [int(value[:2]) * 60 + int(value[3:]) for value in found]
-    if any(later <= earlier for earlier, later in zip(minutes, minutes[1:])):
-        return None
+    """Extract HH:MM/HH-MM only; DD.MM dates are deliberately ignored."""
+    found = []
+    for token in re.findall(r"(?<!\d)(?:[01]?\d|2[0-3])[:-][0-5]\d(?!\d)", text or ""):
+        value = _normalise_ocr_time(token)
+        if value:
+            found.append(value)
     return found
 
 
-def _consensus_times(ocr_texts: list[str]) -> list[str] | None:
-    """Combine distinct values from independent OCR passes using majority voting."""
-    consensus: Counter[str] = Counter()
-    single_candidates: list[list[str]] = []
-    for text in ocr_texts:
-        values = _time_values_from_ocr_text(text)
-        for value in values:
-            consensus[value] += 1
-        if len(values) in (5, 6):
-            single_candidates.append(values)
-
-    trusted = [value for value, votes in consensus.items() if votes >= 2]
-    if len(trusted) > 6:
-        trusted = sorted(
-            trusted,
-            key=lambda value: (-consensus[value], int(value[:2]) * 60 + int(value[3:])),
-        )[:6]
-    trusted.sort(key=lambda value: int(value[:2]) * 60 + int(value[3:]))
-    if len(trusted) in (5, 6):
-        return trusted
-    if single_candidates:
-        return max(
-            single_candidates,
-            key=lambda values: (len(values), sum(consensus[v] for v in values)),
-        )
-    return None
+def _times_from_ocr_text(text: str) -> list[str] | None:
+    """Return exactly five prayer times in printed order."""
+    values = _time_values_from_ocr_text(text)
+    if len(values) != 5:
+        return None
+    minutes = [int(x[:2]) * 60 + int(x[3:]) for x in values]
+    return values if all(b > a for a, b in zip(minutes, minutes[1:])) else None
 
 
-def read_times(image_bytes: bytes) -> tuple[list[str], str]:
-    """OCR whole poster/columns and combine repeated time cells from independent passes."""
-    original = Image.open(io.BytesIO(image_bytes)).convert("L")
-    heading = ImageOps.autocontrast(
-        original.resize((original.width * 4, original.height * 4), Image.Resampling.LANCZOS)
+def _ocr_time_boxes(image: Image.Image, psm: int) -> list[dict]:
+    """Read positioned time cells; never sort all poster times globally."""
+    data = pytesseract.image_to_data(
+        image, lang="eng",
+        config=f"--oem 1 --psm {psm} -c tessedit_char_whitelist=0123456789:-",
+        output_type=Output.DICT,
     )
-    heading_text = pytesseract.image_to_string(heading, lang="eng", config="--oem 1 --psm 11")
+    boxes: list[dict] = []
+    line_groups: dict[tuple[int, int, int], list[dict]] = defaultdict(list)
+    for i, raw in enumerate(data.get("text", [])):
+        text = str(raw or "").strip()
+        if not text:
+            continue
+        try:
+            confidence = float(data["conf"][i])
+            left, top = int(data["left"][i]), int(data["top"][i])
+            width, height = int(data["width"][i]), int(data["height"][i])
+        except (ValueError, TypeError, KeyError):
+            continue
+        if confidence < 25 or width <= 0 or height <= 0:
+            continue
+        item = {
+            "text": text, "left": left, "top": top, "width": width, "height": height,
+            "cx": left + width / 2, "cy": top + height / 2, "confidence": confidence,
+        }
+        value = _normalise_ocr_time(text)
+        if value:
+            boxes.append({**item, "time": value})
+        try:
+            line_key = (int(data["block_num"][i]), int(data["par_num"][i]), int(data["line_num"][i]))
+            line_groups.setdefault(line_key, []).append(item)
+        except (KeyError, ValueError, TypeError):
+            pass
 
-    enhanced = ImageOps.autocontrast(original)
-    enhanced = ImageEnhance.Contrast(enhanced).enhance(1.6)
-    enhanced = enhanced.filter(ImageFilter.UnsharpMask(radius=1, percent=180, threshold=2))
+    # Recover HH:MM where Tesseract split it into separate hour and minute words.
+    for line in line_groups.values():
+        line.sort(key=lambda item: item["left"])
+        for first, second in zip(line, line[1:]):
+            gap = second["left"] - (first["left"] + first["width"])
+            if gap > max(18, int(max(first["height"], second["height"]) * 1.8)):
+                continue
+            if not re.fullmatch(r"\d{1,2}", first["text"]) or not re.fullmatch(r"\d{2}", second["text"]):
+                continue
+            value = _normalise_ocr_time(first["text"] + ":" + second["text"])
+            if value:
+                boxes.append({
+                    "text": first["text"] + ":" + second["text"],
+                    "left": first["left"], "top": min(first["top"], second["top"]),
+                    "width": second["left"] + second["width"] - first["left"],
+                    "height": max(first["height"], second["height"]),
+                    "cx": (first["left"] + second["left"] + second["width"]) / 2,
+                    "cy": (first["top"] + second["top"]) / 2,
+                    "confidence": min(first["confidence"], second["confidence"]),
+                    "time": value,
+                })
+    unique: dict[tuple[str, int, int], dict] = {}
+    for box in boxes:
+        key = (box["time"], round(box["cx"] / 8), round(box["cy"] / 8))
+        if key not in unique or box["confidence"] > unique[key]["confidence"]:
+            unique[key] = box
+    return list(unique.values())
 
-    variants = [("whole", enhanced)]
-    midpoint = max(1, enhanced.width // 2)
-    variants.extend([
-        ("left", enhanced.crop((0, 0, midpoint, enhanced.height))),
-        ("right", enhanced.crop((midpoint, 0, enhanced.width, enhanced.height))),
-    ])
 
-    attempts: list[str] = []
-    ocr_passes: list[str] = []
-    for label, variant in variants:
-        scale = max(2, min(5, 1900 // max(variant.width, 1)))
+def _cluster_boxes(boxes: list[dict], axis: str) -> list[list[dict]]:
+    """Group cells by common horizontal rows (Y) or vertical columns (X)."""
+    if not boxes:
+        return []
+    centre = "cy" if axis == "row" else "cx"
+    typical_height = sorted(box["height"] for box in boxes)[len(boxes) // 2]
+    tolerance = max(9.0, typical_height * 1.15)
+    groups: list[list[dict]] = []
+    for box in sorted(boxes, key=lambda item: item[centre]):
+        if groups:
+            average = sum(item[centre] for item in groups[-1]) / len(groups[-1])
+            if abs(box[centre] - average) <= tolerance:
+                groups[-1].append(box)
+                continue
+        groups.append([box])
+    return groups
+
+
+def _schedule_candidate(boxes: list[dict], axis: str) -> tuple[list[list[str]], float] | None:
+    """Require seven day-groups with exactly five time cells in each group."""
+    groups = [group for group in _cluster_boxes(boxes, axis) if len(group) == 5]
+    if len(groups) != 7:
+        return None
+    if axis == "row":
+        groups.sort(key=lambda group: sum(x["cy"] for x in group) / len(group))
+        for group in groups:
+            group.sort(key=lambda item: item["cx"])
+    else:
+        groups.sort(key=lambda group: sum(x["cx"] for x in group) / len(group))
+        for group in groups:
+            group.sort(key=lambda item: item["cy"])
+    matrix = [[item["time"] for item in group] for group in groups]
+    confidence = sum(item["confidence"] for group in groups for item in group) / 35
+    return matrix, confidence
+
+
+def _validate_week_matrix(matrix: list[list[str]]) -> bool:
+    """Validate 7 days x 5 ordered prayers and smooth day-to-day changes."""
+    if len(matrix) != 7 or any(len(row) != 5 for row in matrix):
+        return False
+    columns: list[list[int]] = [[] for _ in range(5)]
+    bounds = ((180, 480), (600, 900), (720, 1110), (840, 1290), (900, 1410))
+    for row in matrix:
+        values = []
+        for index, value in enumerate(row):
+            match = re.fullmatch(r"([01]\d|2[0-3]):([0-5]\d)", value)
+            if not match:
+                return False
+            minute = int(match.group(1)) * 60 + int(match.group(2))
+            low, high = bounds[index]
+            if not low <= minute <= high:
+                return False
+            values.append(minute)
+            columns[index].append(minute)
+        if any(b <= a for a, b in zip(values, values[1:])):
+            return False
+    return all(abs(b-a) <= 20 for column in columns for a,b in zip(column,column[1:]))
+
+
+def read_week_schedule(image_bytes: bytes, start: date, end: date) -> list[dict]:
+    """Read every prayer time straight from the Telegram poster: seven days, five values."""
+    if (end - start).days != 6:
+        raise ValueError("Telegram afishasi aynan 7 kunlik bo‘lishi kerak.")
+    original = Image.open(io.BytesIO(image_bytes)).convert("L")
+    base = ImageOps.autocontrast(original)
+    variants = [
+        base,
+        ImageEnhance.Contrast(base).enhance(1.7),
+        base.point(lambda pixel: 255 if pixel > 165 else 0),
+    ]
+    candidates: list[tuple[list[list[str]], float, str]] = []
+    for variant in variants:
+        scale = max(2, min(4, 1800 // max(variant.width, variant.height, 1)))
         enlarged = variant.resize(
             (variant.width * scale, variant.height * scale), Image.Resampling.LANCZOS
         )
         for psm in (6, 11):
-            numeric_text = pytesseract.image_to_string(
-                enlarged,
-                lang="eng",
-                config=f"--oem 1 --psm {psm} -c tessedit_char_whitelist=0123456789:.-/",
-            )
-            attempts.append(f"[{label}/psm{psm}]\n{numeric_text}")
-            ocr_passes.append(numeric_text)
-
-    # Weekly posters repeat the same values in several columns. Majority voting
-    # across layouts rejects isolated OCR mistakes while recovering repeated cells.
-    trusted = _consensus_times(ocr_passes)
-    if trusted:
-        return trusted, heading_text + "\n" + "\n".join(attempts)
-
-    details = " | ".join(" ".join(x.split())[:180] for x in attempts[-6:])
-    raise ValueError("5 yoki 6 ta turli vaqt tasdiqlanmadi. OCR: " + details)
-
-def read_week_heading(image_bytes: bytes) -> str:
-    """Read only the poster heading/date; prayer-time OCR is deliberately not trusted."""
-    original = Image.open(io.BytesIO(image_bytes)).convert("L")
-    enlarged = ImageOps.autocontrast(
-        original.resize((original.width * 5, original.height * 5), Image.Resampling.LANCZOS)
-    )
-    outputs = []
-    for psm in (11, 6, 12):
-        outputs.append(
-            pytesseract.image_to_string(enlarged, lang="eng", config=f"--oem 1 --psm {psm}")
+            boxes = _ocr_time_boxes(enlarged, psm)
+            for axis in ("row", "column"):
+                candidate = _schedule_candidate(boxes, axis)
+                if candidate and _validate_week_matrix(candidate[0]):
+                    candidates.append((candidate[0], candidate[1], axis))
+    if not candidates:
+        raise ValueError(
+            "Telegram rasmini o‘qishda 7 kunning har biri uchun 5 ta vaqt topilmadi. "
+            "Rasm to‘liq tanilmadi; noto‘g‘ri jadval yozilmadi."
         )
-    return "\n".join(outputs)
-
-
-def _api_clock(value: object, field: str) -> str:
-    text = str(value or "").strip()
-    match = re.fullmatch(r"([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?", text)
-    if not match:
-        raise ValueError(f"Rasmiy API’da {field} vaqti noto‘g‘ri: {text!r}")
-    return f"{int(match.group(1)):02d}:{match.group(2)}"
-
-
-def fetch_official_days(start: date, end: date) -> list[dict]:
-    """Fetch day-by-day Baliqchi values from the official Namoz Vaqti JSON API."""
-    rows_by_date: dict[date, dict] = {}
-    cursor = date(start.year, start.month, 1)
-    months: list[tuple[int, int]] = []
-    while cursor <= end:
-        months.append((cursor.year, cursor.month))
-        if cursor.month == 12:
-            cursor = date(cursor.year + 1, 1, 1)
-        else:
-            cursor = date(cursor.year, cursor.month + 1, 1)
-
-    field_map = (
-        ("fajr", "bomdod"),
-        ("sunrise", "quyosh"),
-        ("dhuhr", "peshin"),
-        ("asr", "asr"),
-        ("maghrib", "shom"),
-        ("isha", "xufton"),
+    counts = Counter(tuple(tuple(row) for row in matrix) for matrix, _, _ in candidates)
+    matrix, confidence, axis = max(
+        candidates, key=lambda item: (counts[tuple(tuple(row) for row in item[0])], item[1])
     )
-    for year, month in months:
-        response = HTTP.get(
-            OFFICIAL_PRAYER_API,
-            params={
-                "region": CITY_ID,
-                "lang": "lotin",
-                "period": f"{year:04d}-{month:02d}",
-                "format": "json",
-            },
-            headers={"Accept": "application/json", "Cache-Control": "no-cache"},
-            timeout=25,
-        )
-        response.raise_for_status()
-        body = response.json()
-        if not isinstance(body, dict):
-            raise ValueError("Rasmiy API JSON obyekt qaytarmadi.")
-        region = body.get("meta", {}).get("region", {})
-        returned_slug = str(region.get("slug", "")).strip().lower()
-        if returned_slug and returned_slug != CITY_ID.lower():
-            raise ValueError(
-                f"Rasmiy API boshqa hududni qaytardi: {region.get('name', returned_slug)}"
-            )
-        period_rows = body.get("period_table")
-        if not isinstance(period_rows, list) or not period_rows:
-            raise ValueError("Rasmiy API’da period_table topilmadi.")
-
-        for row in period_rows:
-            try:
-                raw_date = str(row.get("date", "")).strip()
-                try:
-                    row_date = datetime.strptime(raw_date, "%d.%m.%Y").date()
-                except ValueError:
-                    row_date = date.fromisoformat(raw_date)
-                raw_times = row.get("times") or {}
-                mapped = {
-                    target: _api_clock(raw_times.get(source), source)
-                    for target, source in field_map
-                }
-            except Exception as error:
-                raise ValueError(f"Rasmiy API jadval qatori noto‘g‘ri: {error}") from error
-
-            numeric = [int(mapped[key][:2]) * 60 + int(mapped[key][3:]) for key, _ in field_map]
-            if any(later <= earlier for earlier, later in zip(numeric, numeric[1:])):
-                raise ValueError(f"{row_date} sanasida vaqtlar ketma-ketligi noto‘g‘ri.")
-            rows_by_date[row_date] = {"date": row_date.isoformat(), **mapped}
-
+    if counts[tuple(tuple(row) for row in matrix)] == 1 and confidence < 65:
+        raise ValueError("Telegram rasmidagi vaqtlar OCR ishonchliligi past; jadval yangilanmadi.")
+    prayer_ids = ("fajr", "dhuhr", "asr", "maghrib", "isha")
     days = []
-    for offset in range((end - start).days + 1):
-        current = start + timedelta(days=offset)
-        if current not in rows_by_date:
-            raise ValueError(f"Rasmiy API’da {current.isoformat()} sanasi yo‘q.")
-        days.append(rows_by_date[current])
-
-    # A full weekly table with all six values identical is almost certainly a
-    # mistaken OCR extraction or stale/incorrect API response; never publish it.
-    signatures = {
-        tuple(day[key] for key in ("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"))
-        for day in days
-    }
-    if len(days) >= 5 and len(signatures) == 1:
-        raise ValueError("Haftaning barcha kunlari aynan bir xil; jadval shubhali.")
+    for offset, row in enumerate(matrix):
+        item = {"date": (start + timedelta(days=offset)).isoformat()}
+        item.update(dict(zip(prayer_ids, row)))
+        days.append(item)
     LOG.info(
-        "Rasmiy API tekshirildi: region=%s, kunlar=%d, birinchi kun=%s, vaqtlar=%s",
-        CITY_ID, len(days), days[0]["date"],
-        ", ".join(days[0][key] for key in ("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha")),
+        "Telegram rasmidan bevosita OCR: %s, 7 kun x 5 namoz; birinchi kun=%s; vaqtlar=%s",
+        axis, days[0]["date"], ", ".join(days[0][key] for key in prayer_ids),
     )
     return days
 
@@ -390,8 +368,21 @@ def get_posts(max_pages: int = 3) -> list[dict]:
 def update_json(start: date, end: date, days: list[dict], post: dict) -> bool:
     if not REPO or not TOKEN:
         raise RuntimeError("GITHUB_REPOSITORY va GITHUB_TOKEN sozlamalari kerak.")
-    if len(days) != (end - start).days + 1:
-        raise ValueError("Rasmiy jadvaldagi kunlar soni sana oralig‘iga mos emas.")
+    if len(days) != 7 or (end - start).days != 6:
+        raise ValueError("Telegram rasmida aynan 7 kunlik jadval bo‘lishi kerak.")
+    prayer_ids = ("fajr", "dhuhr", "asr", "maghrib", "isha")
+    for offset, day in enumerate(days):
+        expected = (start + timedelta(days=offset)).isoformat()
+        if day.get("date") != expected:
+            raise ValueError(f"Telegram rasmidagi sana tartibi noto‘g‘ri: {day.get('date')}")
+        values = []
+        for prayer_id in prayer_ids:
+            value = str(day.get(prayer_id, "")).strip()
+            if not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", value):
+                raise ValueError(f"{expected}: {prayer_id} vaqti noto‘g‘ri: {value!r}")
+            values.append(int(value[:2]) * 60 + int(value[3:]))
+        if any(b <= a for a, b in zip(values, values[1:])):
+            raise ValueError(f"{expected}: namoz vaqtlari ketma-ketligi noto‘g‘ri.")
 
     headers = {
         "Accept": "application/vnd.github+json",
@@ -399,8 +390,7 @@ def update_json(start: date, end: date, days: list[dict], post: dict) -> bool:
         "X-GitHub-Api-Version": "2022-11-28",
     }
     get = HTTP.get(API, params={"ref": BRANCH}, headers=headers, timeout=25)
-    sha = None
-    existing = {}
+    sha, existing = None, {}
     if get.status_code == 200:
         body = get.json()
         sha = body.get("sha")
@@ -423,13 +413,10 @@ def update_json(start: date, end: date, days: list[dict], post: dict) -> bool:
         and existing.get("days") == days
         and str(existing.get("sourcePostId", "")) == str(post["id"])
     ):
-        LOG.info("Joriy rasmiy haftalik jadval va Telegram manbasi o‘zgarmagan.")
+        LOG.info("Telegram rasmidagi haftalik jadval o‘zgarmagan.")
         return False
 
     first = days[0]
-    source_times = [
-        first[key] for key in ("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha")
-    ]
     payload = {
         "schemaVersion": 1,
         "cityId": CITY_ID,
@@ -438,18 +425,17 @@ def update_json(start: date, end: date, days: list[dict], post: dict) -> bool:
         "weekStart": start.isoformat(),
         "weekEnd": end.isoformat(),
         "updatedAt": datetime.now(TZ).isoformat(timespec="seconds"),
-        "source": f"Rasmiy namoz-vaqti.uz JSON API; Telegram haftalik e’lon: @{CHANNEL}/{post['id']}",
-        "scheduleSource": "https://namoz-vaqti.uz/",
+        "source": f"Telegram rasmi: @{CHANNEL}/{post['id']}",
         "sourcePostId": str(post["id"]),
         "sourcePublishedAt": post.get("published", ""),
-        "sourceTimes": source_times,
+        "sourceTimes": [first[key] for key in prayer_ids],
         "days": days,
     }
     data = base64.b64encode(
         (json.dumps(payload, ensure_ascii=False, indent=2) + "\n").encode()
     ).decode()
     put = {
-        "message": f"Baliqchi rasmiy namoz jadvali {start}–{end}",
+        "message": f"Telegram rasmidan namoz jadvali {start}–{end}",
         "content": data,
         "branch": BRANCH,
     }
@@ -459,10 +445,11 @@ def update_json(start: date, end: date, days: list[dict], post: dict) -> bool:
     if res.status_code not in (200, 201):
         raise RuntimeError(f"GitHub JSON yangilashda xato: {res.status_code} {res.text[:300]}")
     LOG.info(
-        "Rasmiy kunlik jadval GitHub’ga yozildi: %s–%s, Telegram post #%s",
+        "Telegram rasmidagi 5 vaqtli jadval GitHub’ga yozildi: %s–%s, post #%s",
         start, end, post["id"],
     )
     return True
+
 
 def main() -> None:
     if not REPO or not TOKEN:
@@ -494,11 +481,11 @@ def main() -> None:
                 post["caption"] + " " + poster_heading, today, published_date
             )
             LOG.info(
-                "Telegram e’loni tasdiqlandi: post #%s, %s–%s. Vaqtlar OCR’dan olinmaydi.",
+                "Telegram post #%s sanasi aniqlandi: %s–%s. Endi faqat rasmdagi 5 namoz vaqti OCR qilinadi.",
                 post["id"], start, end,
             )
 
-            days = fetch_official_days(start, end)
+            days = read_week_schedule(image_response.content, start, end)
             changed = update_json(start, end, days, post)
             if changed:
                 return
