@@ -10,7 +10,7 @@ import json
 import logging
 import os
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
@@ -33,14 +33,18 @@ CITY_ID = os.getenv("CITY_ID", "baliqchi")
 CITY_NAME = os.getenv("CITY_NAME", "Baliqchi tumani")
 PREVIEW = f"https://t.me/s/{CHANNEL}"
 API = f"https://api.github.com/repos/{REPO}/contents/{DATA_PATH}"
-DATE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?(?!\d)")
-DATE_SAME_MONTH_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?(?!\d)")
+DATE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?")
+DATE_SAME_MONTH_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?")
 TIME_RE = re.compile(r"(?<!\d)(2[0-3]|[01]?\d)\s*[-:.,٫]\s*([0-5]\d)(?!\d)")
 HTTP = requests.Session()
 HTTP.headers.update({"User-Agent": "Mozilla/5.0 (compatible; NamozVaqtlari/1.0)", "Accept": "text/html,*/*"})
 
 
-def parse_week(text: str, today: date | None = None) -> tuple[date, date]:
+def parse_week(
+    text: str,
+    today: date | None = None,
+    published_date: date | None = None,
+) -> tuple[date, date]:
     today = today or datetime.now(TZ).date()
     source = text or ""
     m = DATE_RE.search(source)
@@ -53,23 +57,49 @@ def parse_week(text: str, today: date | None = None) -> tuple[date, date]:
         sd, ed, sm = map(int, same_month.groups())
         em = sm
 
+    # Use the Telegram publication date to infer the year. This prevents a 2025
+    # poster for (say) 14–20 November from being mistaken for a 2026 schedule.
+    anchor = published_date or today
     candidates = []
-    for year in (today.year - 1, today.year, today.year + 1):
+    for year in (anchor.year - 1, anchor.year, anchor.year + 1):
         try:
             start = date(year, sm, sd)
             end = date(year + (1 if (em, ed) < (sm, sd) else 0), em, ed)
         except ValueError:
             continue
         if (end - start).days == 6:
-            distance = 0 if start <= today <= end else min(abs((start-today).days), abs((end-today).days))
+            distance = 0 if start <= anchor <= end else min(abs((start-anchor).days), abs((end-anchor).days))
             candidates.append((distance, start, end))
     if not candidates:
         raise ValueError("Sana oralig‘i 7 kunlik haftaga mos kelmadi.")
     _, start, end = min(candidates, key=lambda x: x[0])
+
+    if published_date:
+        publication_gap = (start - published_date).days
+        if not -7 <= publication_gap <= 14:
+            raise ValueError("Telegram post sanasi afishadagi hafta bilan mos kelmadi.")
     if end < today - timedelta(days=2) or start > today + timedelta(days=14):
         raise ValueError("Afishadagi hafta eskirgan yoki juda uzoq kelajakda.")
     return start, end
 
+
+def _time_values_from_ocr_text(text: str) -> list[str]:
+    """Return distinct OCR time values, ordered chronologically."""
+    found: set[str] = set()
+    for line in (text or "").splitlines():
+        cleaned = DATE_RE.sub(" ", line)
+        cleaned = DATE_SAME_MONTH_RE.sub(" ", cleaned)
+        # A lone date such as 06.11 must not be mistaken for the time 06:11.
+        cleaned = re.sub(r"(?<!\d)\d{1,2}\s*[./]\s*\d{1,2}(?:[./]\s*\d{2,4})?", " ", cleaned)
+        for match in TIME_RE.finditer(cleaned):
+            found.add(f"{int(match.group(1)):02d}:{int(match.group(2)):02d}")
+    return sorted(found, key=lambda value: int(value[:2]) * 60 + int(value[3:]))
+
+
+def _times_from_ocr_text(text: str) -> list[str] | None:
+    """Extract 5/6 distinct chronological prayer times from a weekly poster."""
+    values = _time_values_from_ocr_text(text)
+    return values if len(values) in (5, 6) else None
 
 def _times_from_ocr_text(text: str) -> list[str] | None:
     """Extract 5/6 chronological prayer times from OCR output, including row/table layouts."""
@@ -91,7 +121,7 @@ def _times_from_ocr_text(text: str) -> list[str] | None:
 
 
 def read_times(image_bytes: bytes) -> tuple[list[str], str]:
-    """OCR the whole poster and both halves; layouts differ between weekly Telegram posters."""
+    """OCR whole poster/columns and combine repeated time cells from independent passes."""
     original = Image.open(io.BytesIO(image_bytes)).convert("L")
     heading = ImageOps.autocontrast(
         original.resize((original.width * 4, original.height * 4), Image.Resampling.LANCZOS)
@@ -102,8 +132,6 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
     enhanced = ImageEnhance.Contrast(enhanced).enhance(1.6)
     enhanced = enhanced.filter(ImageFilter.UnsharpMask(radius=1, percent=180, threshold=2))
 
-    # Try the whole image first (many current posters use horizontal rows), then both
-    # halves for posters that place prayer names and values in separate columns.
     variants = [("whole", enhanced)]
     midpoint = max(1, enhanced.width // 2)
     variants.extend([
@@ -112,6 +140,8 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
     ])
 
     attempts: list[str] = []
+    consensus: Counter[str] = Counter()
+    single_candidates: list[list[str]] = []
     for label, variant in variants:
         scale = max(2, min(5, 1900 // max(variant.width, 1)))
         enlarged = variant.resize(
@@ -124,12 +154,31 @@ def read_times(image_bytes: bytes) -> tuple[list[str], str]:
                 config=f"--oem 1 --psm {psm} -c tessedit_char_whitelist=0123456789:.-/",
             )
             attempts.append(f"[{label}/psm{psm}]\n{numeric_text}")
-            times = _times_from_ocr_text(numeric_text)
-            if times:
-                return times, heading_text + "\n" + "\n".join(attempts)
+            values = _time_values_from_ocr_text(numeric_text)
+            for value in values:
+                consensus[value] += 1
+            if len(values) in (5, 6):
+                single_candidates.append(values)
+
+    # A weekly poster often repeats one time in every day column. Vote across
+    # independent OCR layouts so one noisy glyph (e.g. 13:30) cannot override
+    # a value confirmed by the whole image and column crops.
+    trusted = [value for value, votes in consensus.items() if votes >= 2]
+    if len(trusted) > 6:
+        trusted = sorted(
+            trusted,
+            key=lambda value: (-consensus[value], int(value[:2]) * 60 + int(value[3:])),
+        )[:6]
+    trusted.sort(key=lambda value: int(value[:2]) * 60 + int(value[3:]))
+    if len(trusted) in (5, 6):
+        return trusted, heading_text + "\n" + "\n".join(attempts)
+
+    if single_candidates:
+        best = max(single_candidates, key=lambda values: (len(values), sum(consensus[v] for v in values)))
+        return best, heading_text + "\n" + "\n".join(attempts)
 
     details = " | ".join(" ".join(x.split())[:180] for x in attempts[-6:])
-    raise ValueError("5 yoki 6 ta ketma-ket vaqt o‘qilmadi. OCR: " + details)
+    raise ValueError("5 yoki 6 ta turli vaqt tasdiqlanmadi. OCR: " + details)
 
 def poster_photo(node) -> str | None:
     # Telegram has used both CSS background images and lazy-loaded img tags.
