@@ -45,7 +45,7 @@ Bu hozircha **debug APK**. Google Play uchun alohida release imzolash kaliti bil
 
 - `app/` — Kotlin Android ilovasi va HTML/CSS/JS WebView interfeysi.
 - `data/prayer-times.json` — barcha o‘rnatilgan ilovalar uchun markaziy jadval.
-- `telegram_sync/public_channel_sync.py` — Telegram haftasini aniqlash va rasmiy Telegram rasmining OCR tahlili orqali jadval olish.
+- `telegram_sync/public_channel_sync.py` — Telegram haftasini aniqlash va haftalik rasmdan 5 namoz vaqtini OCR orqali olish.
 - `telegram_sync/tests/` — sana, preview va OCR sinovlari.
 - `.github/workflows/sync-public-telegram.yml` — jadval yangilash workflow’i.
 - `.github/workflows/build-apk.yml` — APK yig‘ish workflow’i.
@@ -54,9 +54,9 @@ Bu hozircha **debug APK**. Google Play uchun alohida release imzolash kaliti bil
 
 - [x] Yangi `namoz-vaqtlari-android` repository yaratildi; oldingi `namoz-app` repository o‘zgartirilmagan.
 - [x] Kotlin/HTML Android ilovasi manbalari joylandi.
-- [x] Ommaviy Telegram kanalidan post #1065 orqali yangi hafta aniqlandi.
-- [x] Kunlik jadval rasmiy JSON API’dan olindi va hudud/sana/vaqt tekshiruvlaridan o‘tdi.
-- [x] JSON’da har bir kunning alohida vaqtlari va Telegram manba posti saqlandi.
+- [x] Haftalik jadval manbasi Telegram kanalidagi rasm qilib belgilandi.
+- [x] Quyosh chiqishi jadvaldan olib tashlandi; faqat 5 namoz vaqti saqlanadi.
+- [ ] Haqiqiy Telegram afishasi OCR orqali to‘liq o‘qilib, 7 kunlik jadval tasdiqlanishi kerak.
 - [x] Android debug APK GitHub Actions’da muvaffaqiyatli yig‘ildi va artefaktga yuklandi.
 - [ ] Turli Android telefonlarda amaliy sinov va real azon audiosi/aniq signal ruxsatlarini tekshirish.
 
