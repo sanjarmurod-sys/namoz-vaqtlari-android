@@ -78,7 +78,7 @@ def _times_from_ocr_text(text: str) -> list[str] | None:
         cleaned = DATE_RE.sub(" ", line)
         cleaned = DATE_SAME_MONTH_RE.sub(" ", cleaned)
         # A lone date such as 06.11 must not be mistaken for the time 06:11.
-        cleaned = re.sub(r"(?<!\d)\d{1,2}\\s*[./]\\s*\\d{1,2}(?:[./]\\s*\\d{2,4})?(?!\d)", " ", cleaned)
+        cleaned = re.sub(r"(?<!\d)\d{1,2}\s*[./]\s*\d{1,2}(?:[./]\s*\d{2,4})?(?!\d)", " ", cleaned)
         for match in TIME_RE.finditer(cleaned):
             found.append(f"{int(match.group(1)):02d}:{int(match.group(2)):02d}")
 
@@ -138,7 +138,7 @@ def poster_photo(node) -> str | None:
         ".tgme_widget_message_photo, [style*='background-image']"
     ):
         style = el.get("style", "")
-        m = re.search(r"url\\(['\"]?(.*?)['\"]?\\)", style, re.I)
+        m = re.search(r"url\(['\"]?(.*?)['\"]?\)", style, re.I)
         if m:
             return urljoin("https://t.me", m.group(1).replace("&amp;", "&"))
     for img in node.select(".tgme_widget_message_photo img, img[src], img[data-src]"):
@@ -168,7 +168,7 @@ def get_posts(max_pages: int = 8) -> list[dict]:
         page_ids: list[int] = []
         for node in nodes:
             reference = node.get("data-post", "")
-            match = re.search(r"/(\\d+)$", reference)
+            match = re.search(r"/(\d+)$", reference)
             if not match:
                 continue
             post_id = int(match.group(1))
