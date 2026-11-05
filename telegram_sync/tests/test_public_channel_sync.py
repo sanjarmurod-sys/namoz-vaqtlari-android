@@ -45,5 +45,28 @@ class PublicChannelParserTests(unittest.TestCase):
             sync.parse_week("Haftalik namoz vaqtlari", date(2026, 11, 4))
 
 
+    def test_week_range_with_explicit_year(self):
+        start, end = sync.parse_week("06.11.2026–12.11.2026", date(2026, 11, 5))
+        self.assertEqual((start, end), (date(2026, 11, 6), date(2026, 11, 12)))
+
+    def test_compact_same_month_week_range(self):
+        start, end = sync.parse_week("06–12.11.2026", date(2026, 11, 5))
+        self.assertEqual((start, end), (date(2026, 11, 6), date(2026, 11, 12)))
+
+    def test_ocr_times_can_be_in_one_horizontal_row(self):
+        text = "06.11.2026–12.11.2026\n06:10 | 13:00 | 15:40 | 17:20 | 19:05"
+        self.assertEqual(
+            sync._times_from_ocr_text(text),
+            ["06:10", "13:00", "15:40", "17:20", "19:05"],
+        )
+
+    def test_single_date_is_not_misread_as_prayer_time(self):
+        text = "06.11\n06:10\n13:00\n15:40\n17:20\n19:05"
+        self.assertEqual(
+            sync._times_from_ocr_text(text),
+            ["06:10", "13:00", "15:40", "17:20", "19:05"],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
