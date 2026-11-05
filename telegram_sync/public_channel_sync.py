@@ -148,7 +148,7 @@ def poster_photo(node) -> str | None:
     return None
 
 
-def get_posts(max_pages: int = 8) -> list[dict]:
+def get_posts(max_pages: int = 3) -> list[dict]:
     """Read several public-preview pages so a busy channel cannot hide the latest poster."""
     posts_by_id: dict[int, dict] = {}
     seen_page_oldest: set[int] = set()
@@ -156,7 +156,7 @@ def get_posts(max_pages: int = 8) -> list[dict]:
 
     for page_number in range(max_pages):
         params = {"before": before} if before is not None else None
-        response = HTTP.get(PREVIEW, params=params, timeout=25)
+        response = HTTP.get(PREVIEW, params=params, timeout=15)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
         nodes = soup.select(".tgme_widget_message[data-post]")
@@ -198,7 +198,7 @@ def get_posts(max_pages: int = 8) -> list[dict]:
         before = oldest_id
 
     posts = sorted(posts_by_id.values(), key=lambda post: post["id"], reverse=True)
-    photos = [post for post in posts if post["photo"]]
+    photos = [post for post in posts if post["photo"]][:20]
     LOG.info(
         "Telegram preview tekshirildi: %d post, %d rasmli post; eng yangi ID=%s; rasmli IDlar=%s",
         len(posts), len(photos), posts[0]["id"] if posts else "yo‘q",
@@ -276,7 +276,7 @@ def main() -> None:
 
     for post in posts:
         try:
-            image_response = HTTP.get(post["photo"], timeout=30)
+            image_response = HTTP.get(post["photo"], timeout=18)
             image_response.raise_for_status()
             times, poster_text = read_times(image_response.content)
             start, end = parse_week(post["caption"] + " " + poster_text, today)
