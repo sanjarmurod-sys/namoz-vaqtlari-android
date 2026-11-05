@@ -251,7 +251,7 @@ def update_json(start: date, end: date, times: list[str], post: dict) -> bool:
         "weekStart": start.isoformat(), "weekEnd": end.isoformat(),
         "updatedAt": datetime.now(TZ).isoformat(timespec="seconds"),
         "source": f"Ommaviy Telegram preview: @{CHANNEL}/{post['id']}",
-        "sourcePostId": str(post["id"]), "sourcePublishedAt": post["published"],
+        "sourcePostId": str(post["id"]), "sourcePublishedAt": post.get("published", ""),
         "sourceTimes": times, "days": days,
     }
     data = base64.b64encode((json.dumps(payload, ensure_ascii=False, indent=2)+"\n").encode()).decode()
