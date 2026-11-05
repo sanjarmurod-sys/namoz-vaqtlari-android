@@ -17,6 +17,8 @@ from zoneinfo import ZoneInfo
 
 import pytesseract
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 from pytesseract import Output
@@ -37,6 +39,12 @@ DATE_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?\
 DATE_SAME_MONTH_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[-–—]\s*(\d{1,2})\s*[.,/]\s*(\d{1,2})(?:[.,/]\s*\d{2,4})?")
 TIME_RE = re.compile(r"(?<!\d)(2[0-3]|[01]?\d)\s*[-:.,٫]\s*([0-5]\d)(?!\d)")
 HTTP = requests.Session()
+RETRY = Retry(
+    total=4, connect=4, read=4, status=4, backoff_factor=0.6,
+    status_forcelist=(429, 500, 502, 503, 504),
+    allowed_methods=frozenset(("GET",)),
+)
+HTTP.mount("https://", HTTPAdapter(max_retries=RETRY))
 HTTP.headers.update({"User-Agent": "Mozilla/5.0 (compatible; NamozVaqtlari/1.0)", "Accept": "text/html,*/*"})
 
 
@@ -325,13 +333,27 @@ def main() -> None:
 
     for post in posts:
         try:
+            published_raw = post.get("published", "")
+            if not published_raw:
+                raise ValueError("Telegram postining e’lon sanasi aniqlanmadi.")
+            published_dt = datetime.fromisoformat(published_raw.replace("Z", "+00:00"))
+            if published_dt.tzinfo is None:
+                published_dt = published_dt.replace(tzinfo=TZ)
+            published_date = published_dt.astimezone(TZ).date()
+
+            # Avoid OCR'ing old archive posters. A weekly schedule is published
+            # close to its effective week; the post date also anchors its year.
+            if published_date < today - timedelta(days=21):
+                LOG.info("Eski arxiv posti tashlab ketildi: #%s (%s)", post["id"], published_date)
+                continue
+
             image_response = HTTP.get(post["photo"], timeout=18)
             image_response.raise_for_status()
             times, poster_text = read_times(image_response.content)
-            start, end = parse_week(post["caption"] + " " + poster_text, today)
+            start, end = parse_week(post["caption"] + " " + poster_text, today, published_date)
             LOG.info(
-                "Yaroqli jadval: post #%s, %s–%s; vaqtlar=%s",
-                post["id"], start, end, ", ".join(times),
+                "Yaroqli jadval: post #%s, e’lon=%s, %s–%s; vaqtlar=%s",
+                post["id"], published_date, start, end, ", ".join(times),
             )
             changed = update_json(start, end, times, post)
             if changed:
