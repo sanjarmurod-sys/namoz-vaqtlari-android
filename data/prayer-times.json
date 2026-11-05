@@ -3,75 +3,75 @@
   "cityId": "baliqchi",
   "cityName": "Baliqchi tumani",
   "timezone": "Asia/Tashkent",
-  "weekStart": "2026-10-30",
-  "weekEnd": "2026-11-05",
-  "updatedAt": "2026-11-04T23:05:58+05:00",
-  "source": "Ommaviy Telegram preview: @namozvaqti365/1063",
-  "sourcePostId": "1063",
-  "sourcePublishedAt": "2026-10-29T12:19:37+00:00",
+  "weekStart": "2026-11-14",
+  "weekEnd": "2026-11-20",
+  "updatedAt": "2026-11-05T23:28:16+05:00",
+  "source": "Ommaviy Telegram preview: @namozvaqti365/920",
+  "sourcePostId": "920",
+  "sourcePublishedAt": "2025-11-13T10:53:30+00:00",
   "sourceTimes": [
-    "06:10",
+    "06:25",
     "13:00",
-    "15:40",
-    "17:20",
-    "19:05"
+    "15:25",
+    "17:00",
+    "18:40"
   ],
   "days": [
     {
-      "date": "2026-10-30",
-      "fajr": "06:10",
+      "date": "2026-11-14",
+      "fajr": "06:25",
       "dhuhr": "13:00",
-      "asr": "15:40",
-      "maghrib": "17:20",
-      "isha": "19:05"
+      "asr": "15:25",
+      "maghrib": "17:00",
+      "isha": "18:40"
     },
     {
-      "date": "2026-10-31",
-      "fajr": "06:10",
+      "date": "2026-11-15",
+      "fajr": "06:25",
       "dhuhr": "13:00",
-      "asr": "15:40",
-      "maghrib": "17:20",
-      "isha": "19:05"
+      "asr": "15:25",
+      "maghrib": "17:00",
+      "isha": "18:40"
     },
     {
-      "date": "2026-11-01",
-      "fajr": "06:10",
+      "date": "2026-11-16",
+      "fajr": "06:25",
       "dhuhr": "13:00",
-      "asr": "15:40",
-      "maghrib": "17:20",
-      "isha": "19:05"
+      "asr": "15:25",
+      "maghrib": "17:00",
+      "isha": "18:40"
     },
     {
-      "date": "2026-11-02",
-      "fajr": "06:10",
+      "date": "2026-11-17",
+      "fajr": "06:25",
       "dhuhr": "13:00",
-      "asr": "15:40",
-      "maghrib": "17:20",
-      "isha": "19:05"
+      "asr": "15:25",
+      "maghrib": "17:00",
+      "isha": "18:40"
     },
     {
-      "date": "2026-11-03",
-      "fajr": "06:10",
+      "date": "2026-11-18",
+      "fajr": "06:25",
       "dhuhr": "13:00",
-      "asr": "15:40",
-      "maghrib": "17:20",
-      "isha": "19:05"
+      "asr": "15:25",
+      "maghrib": "17:00",
+      "isha": "18:40"
     },
     {
-      "date": "2026-11-04",
-      "fajr": "06:10",
+      "date": "2026-11-19",
+      "fajr": "06:25",
       "dhuhr": "13:00",
-      "asr": "15:40",
-      "maghrib": "17:20",
-      "isha": "19:05"
+      "asr": "15:25",
+      "maghrib": "17:00",
+      "isha": "18:40"
     },
     {
-      "date": "2026-11-05",
-      "fajr": "06:10",
+      "date": "2026-11-20",
+      "fajr": "06:25",
       "dhuhr": "13:00",
-      "asr": "15:40",
-      "maghrib": "17:20",
-      "isha": "19:05"
+      "asr": "15:25",
+      "maghrib": "17:00",
+      "isha": "18:40"
     }
   ]
 }
