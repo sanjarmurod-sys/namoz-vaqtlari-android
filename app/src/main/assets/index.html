@@ -524,58 +524,16 @@ function showPage(name){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function rad(v){return v*Math.PI/180;}function deg(v){return v*180/Math.PI;}
-function julianAtMidnight(date){return Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())/86400000+2440587.5;}
 function norm360(v){return ((v%360)+360)%360;}
-function hourAngle(latitude,declination,altitude){
-  const p=rad(latitude),d=declination,h=rad(altitude);
-  const c=(Math.sin(h)-Math.sin(p)*Math.sin(d))/(Math.cos(p)*Math.cos(d));
-  if(c<-1||c>1)return null;return Math.acos(c);
-}
-function localDateFromUtcHours(day,hours){
-  // hours is already UTC solar time. Date renders it in the phone's local timezone;
-  // do not add the timezone offset a second time.
-  const utcMidnight=Date.UTC(day.getFullYear(),day.getMonth(),day.getDate());
-  return new Date(utcMidnight+hours*3600000);
-}
-function solarData(day,lat,lon){
-  const jd=julianAtMidnight(day);
-  const n=Math.round(jd-2451545.0009+lon/360);
-  const jStar=2451545.0009-lon/360+n;
-  const mean=rad(norm360(357.5291+0.98560028*(jStar-2451545)));
-  const center=rad(1.9148)*Math.sin(mean)+rad(0.0200)*Math.sin(2*mean)+rad(0.0003)*Math.sin(3*mean);
-  const lambda=mean+center+rad(180+102.9372);
-  const declination=Math.asin(Math.sin(lambda)*Math.sin(rad(23.4397)));
-  const transit=jStar+0.0053*Math.sin(mean)-0.0069*Math.sin(2*lambda);
-  const utcNoon=(transit-jd)*24;
-  return {declination,utcNoon};
-}
-function calculatePrayerTimes(day,lat,lon,method,asrFactor){
-  const cfg=METHODS[method]||METHODS.Karachi;const sun=solarData(day,lat,lon);
-  const solarNoon=sun.utcNoon;
-  const fajrAngle=hourAngle(lat,sun.declination,-cfg.fajr);
-  const sunriseAngle=hourAngle(lat,sun.declination,-0.833);
-  const sunsetAngle=sunriseAngle;
-  const asrAltitude=deg(Math.atan(1/(asrFactor+Math.tan(Math.abs(rad(lat)-sun.declination)))));
-  const asrAngle=hourAngle(lat,sun.declination,asrAltitude);
-  const ishaAngle=hourAngle(lat,sun.declination,-cfg.isha);
-  const times={};
-  times.fajr=fajrAngle===null?null:localDateFromUtcHours(day,solarNoon-deg(fajrAngle)/15);
-  times.sunrise=sunriseAngle===null?null:localDateFromUtcHours(day,solarNoon-deg(sunriseAngle)/15);
-  times.dhuhr=localDateFromUtcHours(day,solarNoon+2/60);
-  times.asr=asrAngle===null?null:localDateFromUtcHours(day,solarNoon+deg(asrAngle)/15);
-  times.maghrib=sunsetAngle===null?null:localDateFromUtcHours(day,solarNoon+deg(sunsetAngle)/15);
-  times.isha=ishaAngle===null?null:localDateFromUtcHours(day,solarNoon+deg(ishaAngle)/15);
-  // Umm al-Qura: Isha odatda shomdan keyin 90 daqiqa (Ramazonda 120 daqiqa).
-  if(method==='UmmAlQura'&&times.maghrib){const minutes=(day.getMonth()===8)?120:90;times.isha=new Date(times.maghrib.getTime()+minutes*60000);}
-  return times;
-}
 function formatTime(date){if(!date||Number.isNaN(date.getTime()))return'--:--';const rounded=new Date(Math.round(date.getTime()/60000)*60000);return String(rounded.getHours()).padStart(2,'0')+':'+String(rounded.getMinutes()).padStart(2,'0');}
 function dateFromClock(day,clock){if(!clock)return null;const [h,m]=clock.split(':').map(Number);if(!Number.isFinite(h)||!Number.isFinite(m))return null;return new Date(day.getFullYear(),day.getMonth(),day.getDate(),h,m,0,0);}
 function getDisplayTime(day,times,id){if(settings.manual[id]&&settings.manualTimes[id])return dateFromClock(day,settings.manualTimes[id]);return times[id];}
 function dateKey(day){return `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;}
 function getRemoteDay(day){if(!remoteSchedule||!settings.telegramSyncEnabled)return null;const cityMatch=remoteSchedule.cityId==='all'||remoteSchedule.cityId===settings.city;if(!cityMatch)return null;return (remoteSchedule.days||[]).find(x=>x.date===dateKey(day))||null;}
 function getTodayTimes(day=new Date()){
-  const times=calculatePrayerTimes(day,settings.lat,settings.lon,settings.method,Number(settings.asr));
+  // Namoz vaqtlari faqat tasdiqlangan Telegram jadvalidan olinadi.
+  // Jadval mavjud bo‘lmasa, astronomik yoki boshqa manba bo‘yicha taxmin qilinmaydi.
+  const times={fajr:null,dhuhr:null,asr:null,maghrib:null,isha:null};
   const remote=getRemoteDay(day);
   if(remote){for(const id of ['fajr','dhuhr','asr','maghrib','isha'])if(remote[id])times[id]=dateFromClock(day,remote[id]);}
   for(const p of PRAYERS){if(settings.manual[p.id]&&settings.manualTimes[p.id])times[p.id]=dateFromClock(day,settings.manualTimes[p.id]);}
@@ -587,15 +545,16 @@ function renderHome(){
   document.getElementById('todayDate').textContent=new Intl.DateTimeFormat('uz-UZ',{day:'numeric',month:'long',weekday:'long'}).format(now);
   document.getElementById('calculationLabel').textContent=getRemoteDay(now)?'Namoz jadvali':(settings.method==='Karachi'?'Karachi · Hanafiy':settings.method+' · '+(settings.asr==2?'Hanafiy':'Shofe’iy'));
   const upcoming=PRAYERS.map(p=>({p,time:t[p.id]})).filter(x=>x.time&&x.time.getTime()>now.getTime()).sort((a,b)=>a.time-b.time);
-  let next=upcoming[0];if(!next){const tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);const tt=getTodayTimes(tomorrow);next={p:PRAYERS[0],time:tt.fajr};}
-  document.getElementById('nextName').textContent=next.p.name+' · '+formatTime(next.time);
+  let next=upcoming[0];
+  if(!next){const tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);const tt=getTodayTimes(tomorrow);if(tt.fajr)next={p:PRAYERS[0],time:tt.fajr};}
+  document.getElementById('nextName').textContent=next?next.p.name+' · '+formatTime(next.time):'Telegram jadvali kutilmoqda';
   let html='';
-  for(const p of PRAYERS){const time=t[p.id];const isNext=next.p.id===p.id&&next.time.toDateString()===now.toDateString();html+=`<div class="prayer-card ${isNext?'next':''}"><div class="prayer-icon">${p.icon}</div><div class="prayer-info"><strong>${p.name}</strong><small>${p.description}</small>${isNext?'<span class="status-tag">KEYINGI NAMOZ</span>':''}</div><div class="prayer-time">${formatTime(time)}</div></div>`;}
+  for(const p of PRAYERS){const time=t[p.id];const isNext=!!next&&next.p.id===p.id&&next.time.toDateString()===now.toDateString();html+=`<div class="prayer-card ${isNext?'next':''}"><div class="prayer-icon">${p.icon}</div><div class="prayer-info"><strong>${p.name}</strong><small>${p.description}</small>${isNext?'<span class="status-tag">KEYINGI NAMOZ</span>':''}</div><div class="prayer-time">${formatTime(time)}</div></div>`;}
   document.getElementById('prayerList').innerHTML=html;
-  updateCountdown(next.time);
+  updateCountdown(next?next.time:null);
   document.getElementById('masterAzan').checked=!!settings.masterAzan;
 }
-function updateCountdown(nextTime){const now=new Date();let diff=Math.max(0,nextTime.getTime()-now.getTime());const h=Math.floor(diff/3600000);diff%=3600000;const m=Math.floor(diff/60000);const s=Math.floor((diff%60000)/1000);document.getElementById('countdown').innerHTML=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}<small>qolgan vaqt</small>`;}
+function updateCountdown(nextTime){if(!nextTime){document.getElementById('countdown').innerHTML='--:--:--<small>jadval kutilmoqda</small>';return;}const now=new Date();let diff=Math.max(0,nextTime.getTime()-now.getTime());const h=Math.floor(diff/3600000);diff%=3600000;const m=Math.floor(diff/60000);const s=Math.floor((diff%60000)/1000);document.getElementById('countdown').innerHTML=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}<small>qolgan vaqt</small>`;}
 function updateClock(){const n=new Date();document.getElementById('clock').textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');renderHome();}
 function getQiblaBearing(lat,lon){const kaabaLat=rad(21.4225),kaabaLon=rad(39.8262),p=rad(lat),l=rad(lon);const y=Math.sin(kaabaLon-l);const x=Math.cos(p)*Math.tan(kaabaLat)-Math.sin(p)*Math.cos(kaabaLon-l);return norm360(deg(Math.atan2(y,x)));}
 function updateQibla(){qiblaBearing=getQiblaBearing(settings.lat,settings.lon);document.getElementById('qiblaBearing').textContent=Math.round(qiblaBearing)+'°';if(magneticHeading!==null)document.getElementById('phoneHeading').textContent=Math.round(magneticHeading)+'°';else document.getElementById('phoneHeading').textContent='—°';rotateNeedle();}
@@ -656,7 +615,7 @@ function changeMethod(v){settings.method=v;saveSettings();renderAll();}
 function changeAsr(v){settings.asr=Number(v);saveSettings();renderAll();}
 function renderManualTimes(){const holder=document.getElementById('manualTimes');holder.innerHTML=PRAYERS.map(p=>{const current=getTodayTimes()[p.id];const val=settings.manualTimes[p.id]||formatTime(current);return `<div class="manual-row"><div><strong>${p.name}</strong><small>${settings.manual[p.id]?'Qo‘lda belgilangan':'Avtomatik hisoblanadi'}</small></div><input aria-label="${p.name} vaqti" type="time" value="${val==='--:--'?'':val}" id="manual_${p.id}" onchange="setManualTime('${p.id}',this.value)" ${settings.manual[p.id]?'':'disabled'}><label class="mini-check"><input type="checkbox" ${settings.manual[p.id]?'checked':''} onchange="toggleManual('${p.id}',this.checked)">Qo‘lda</label></div>`;}).join('');}
 function setManualTime(id,value){settings.manualTimes[id]=value;if(value)settings.manual[id]=true;saveSettings();renderAll();}
-function toggleManual(id,enabled){settings.manual[id]=enabled;if(enabled&&!settings.manualTimes[id])settings.manualTimes[id]=formatTime(calculatePrayerTimes(new Date(),settings.lat,settings.lon,settings.method,Number(settings.asr))[id]);saveSettings();renderAll();}
+function toggleManual(id,enabled){settings.manual[id]=enabled;if(enabled&&!settings.manualTimes[id])settings.manualTimes[id]='';saveSettings();renderAll();}
 function resetManualTimes(){PRAYERS.forEach(p=>{settings.manual[p.id]=false;settings.manualTimes[p.id]='';});saveSettings();renderAll();showToast('Barcha vaqtlar avtomatik hisoblashga qaytdi');}
 function setMasterAzan(enabled){settings.masterAzan=enabled;saveSettings();document.getElementById('masterAzan').checked=enabled;document.getElementById('settingsMasterAzan').checked=enabled;scheduleAzan();showToast(enabled?'Azon xabarnomalari yoqildi':'Azon xabarnomalari o‘chirildi');}
 function togglePrayerAzan(id,enabled){settings.enabled[id]=enabled;saveSettings();scheduleAzan();}
