@@ -6,6 +6,7 @@ on:
     paths:
       - 'telegram_sync/public_channel_sync.py'
       - 'telegram_sync/tests/**'
+      - 'app/src/main/assets/index.html'
       - '.github/workflows/sync-public-telegram.yml'
   schedule:
     - cron: '17 */3 * * *'
