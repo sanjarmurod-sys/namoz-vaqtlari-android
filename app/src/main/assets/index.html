@@ -543,7 +543,7 @@ function renderHome(){
   const now=new Date();const t=getTodayTimes(now);latestTimes=t;
   document.getElementById('heroCity').textContent=settings.cityName;
   document.getElementById('todayDate').textContent=new Intl.DateTimeFormat('uz-UZ',{day:'numeric',month:'long',weekday:'long'}).format(now);
-  document.getElementById('calculationLabel').textContent=getRemoteDay(now)?'Namoz jadvali':(settings.method==='Karachi'?'Karachi · Hanafiy':settings.method+' · '+(settings.asr==2?'Hanafiy':'Shofe’iy'));
+  document.getElementById('calculationLabel').textContent=getRemoteDay(now)?'Telegram jadvali':'Telegram jadvali kutilmoqda';
   const upcoming=PRAYERS.map(p=>({p,time:t[p.id]})).filter(x=>x.time&&x.time.getTime()>now.getTime()).sort((a,b)=>a.time-b.time);
   let next=upcoming[0];
   if(!next){const tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);const tt=getTodayTimes(tomorrow);if(tt.fajr)next={p:PRAYERS[0],time:tt.fajr};}
@@ -613,10 +613,10 @@ function useGps(){if(window.Android&&Android.getCurrentLocation)Android.getCurre
 function saveManualLocation(){const lat=Number(document.getElementById('manualLat').value),lon=Number(document.getElementById('manualLon').value);if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat<-90||lat>90||lon<-180||lon>180){showToast('Koordinatalarni to‘g‘ri kiriting');return;}settings.lat=lat;settings.lon=lon;const nearest=nearestCityForCoordinates(lat,lon);settings.city=nearest?nearest.id:'custom';settings.cityName=nearest?nearest.name+' · qo‘lda':'Tanlangan joy';saveSettings();renderAll();showToast('Koordinatalar saqlandi');}
 function changeMethod(v){settings.method=v;saveSettings();renderAll();}
 function changeAsr(v){settings.asr=Number(v);saveSettings();renderAll();}
-function renderManualTimes(){const holder=document.getElementById('manualTimes');holder.innerHTML=PRAYERS.map(p=>{const current=getTodayTimes()[p.id];const val=settings.manualTimes[p.id]||formatTime(current);return `<div class="manual-row"><div><strong>${p.name}</strong><small>${settings.manual[p.id]?'Qo‘lda belgilangan':'Avtomatik hisoblanadi'}</small></div><input aria-label="${p.name} vaqti" type="time" value="${val==='--:--'?'':val}" id="manual_${p.id}" onchange="setManualTime('${p.id}',this.value)" ${settings.manual[p.id]?'':'disabled'}><label class="mini-check"><input type="checkbox" ${settings.manual[p.id]?'checked':''} onchange="toggleManual('${p.id}',this.checked)">Qo‘lda</label></div>`;}).join('');}
+function renderManualTimes(){const holder=document.getElementById('manualTimes');holder.innerHTML=PRAYERS.map(p=>{const current=getTodayTimes()[p.id];const val=settings.manualTimes[p.id]||formatTime(current);return `<div class="manual-row"><div><strong>${p.name}</strong><small>${settings.manual[p.id]?'Qo‘lda belgilangan':'Telegram jadvalidan olinadi'}</small></div><input aria-label="${p.name} vaqti" type="time" value="${val==='--:--'?'':val}" id="manual_${p.id}" onchange="setManualTime('${p.id}',this.value)" ${settings.manual[p.id]?'':'disabled'}><label class="mini-check"><input type="checkbox" ${settings.manual[p.id]?'checked':''} onchange="toggleManual('${p.id}',this.checked)">Qo‘lda</label></div>`;}).join('');}
 function setManualTime(id,value){settings.manualTimes[id]=value;if(value)settings.manual[id]=true;saveSettings();renderAll();}
 function toggleManual(id,enabled){settings.manual[id]=enabled;if(enabled&&!settings.manualTimes[id])settings.manualTimes[id]='';saveSettings();renderAll();}
-function resetManualTimes(){PRAYERS.forEach(p=>{settings.manual[p.id]=false;settings.manualTimes[p.id]='';});saveSettings();renderAll();showToast('Barcha vaqtlar avtomatik hisoblashga qaytdi');}
+function resetManualTimes(){PRAYERS.forEach(p=>{settings.manual[p.id]=false;settings.manualTimes[p.id]='';});saveSettings();renderAll();showToast('Vaqtlar Telegram jadvalidan olinadi');}
 function setMasterAzan(enabled){settings.masterAzan=enabled;saveSettings();document.getElementById('masterAzan').checked=enabled;document.getElementById('settingsMasterAzan').checked=enabled;scheduleAzan();showToast(enabled?'Azon xabarnomalari yoqildi':'Azon xabarnomalari o‘chirildi');}
 function togglePrayerAzan(id,enabled){settings.enabled[id]=enabled;saveSettings();scheduleAzan();}
 function changePrayerVoice(id,slot){settings.voice[id]=slot;saveSettings();scheduleAzan();}
