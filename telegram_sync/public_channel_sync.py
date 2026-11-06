@@ -129,25 +129,71 @@ def _ocr_time_boxes(image: Image.Image, psm: int) -> list[dict]:
         output_type=Output.DICT,
     )
     boxes: list[dict] = []
+    # Tesseract sometimes splits a printed time into separate OCR words, e.g.
+    # "05", ":", "28". First retain complete tokens, then reconstruct times
+    # from tokens on the same text line without mixing adjacent table rows.
+    line_tokens: dict[tuple[int, int, int], list[dict]] = defaultdict(list)
     for i, raw in enumerate(data.get("text", [])):
         text = str(raw or "").strip()
-        value = _normalise_ocr_time(text)
-        if not value:
+        if not text:
             continue
         try:
             confidence = float(data["conf"][i])
             left, top = int(data["left"][i]), int(data["top"][i])
             width, height = int(data["width"][i]), int(data["height"][i])
-        except (ValueError, TypeError, KeyError):
+            key = (
+                int(data.get("block_num", [0] * len(data["text"]))[i]),
+                int(data.get("par_num", [0] * len(data["text"]))[i]),
+                int(data.get("line_num", [0] * len(data["text"]))[i]),
+            )
+        except (ValueError, TypeError, KeyError, IndexError):
             continue
-        if confidence < 25 or width <= 0 or height <= 0:
+        if confidence < 15 or width <= 0 or height <= 0:
             continue
-        boxes.append({
-            "text": text, "time": value,
-            "left": left, "top": top, "width": width, "height": height,
-            "cx": left + width / 2, "cy": top + height / 2,
-            "confidence": confidence,
-        })
+        token = {
+            "text": text, "left": left, "top": top, "width": width,
+            "height": height, "confidence": confidence,
+        }
+        line_tokens[key].append(token)
+        value = _normalise_ocr_time(text)
+        if value and confidence >= 25:
+            boxes.append({
+                **token, "time": value,
+                "cx": left + width / 2, "cy": top + height / 2,
+            })
+
+    # Reassemble split OCR words from their original left-to-right line order.
+    for tokens in line_tokens.values():
+        tokens.sort(key=lambda item: item["left"])
+        line_text = " ".join(item["text"] for item in tokens)
+        matches = list(re.finditer(r"(?<!\\d)([01]?\\d|2[0-3])\\s*[:：٫-]\\s*([0-5]\\d)(?!\\d)", line_text))
+        if not matches:
+            continue
+        offsets = []
+        cursor = 0
+        for token in tokens:
+            offsets.append((cursor, cursor + len(token["text"]), token))
+            cursor += len(token["text"]) + 1
+        for match in matches:
+            used = [item for start, end, item in offsets if start < match.end() and end > match.start()]
+            if not used:
+                continue
+            left = min(item["left"] for item in used)
+            top = min(item["top"] for item in used)
+            right = max(item["left"] + item["width"] for item in used)
+            bottom = max(item["top"] + item["height"] for item in used)
+            value = f"{int(match.group(1)):02d}:{match.group(2)}"
+            confidence = sum(item["confidence"] for item in used) / len(used)
+            # Avoid adding the same geometry/time twice.
+            if any(box["time"] == value and abs(box["cy"] - (top + bottom) / 2) < 3
+                   and abs(box["cx"] - (left + right) / 2) < 5 for box in boxes):
+                continue
+            boxes.append({
+                "text": match.group(0), "time": value, "left": left, "top": top,
+                "width": right-left, "height": bottom-top,
+                "cx": (left+right)/2, "cy": (top+bottom)/2,
+                "confidence": confidence,
+            })
     return boxes
 
 
@@ -227,7 +273,7 @@ def read_week_schedule(image_bytes: bytes, start: date, end: date) -> list[dict]
         enlarged = variant.resize(
             (variant.width * scale, variant.height * scale), Image.Resampling.LANCZOS
         )
-        for psm in (6, 11):
+        for psm in (6, 11, 4, 12):
             boxes = _ocr_time_boxes(enlarged, psm)
             for axis in ("row", "column"):
                 candidate = _schedule_candidate(boxes, axis)
