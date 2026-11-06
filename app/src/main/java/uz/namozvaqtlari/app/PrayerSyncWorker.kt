@@ -46,15 +46,26 @@ object PrayerSyncRepository {
 
         val root = JSONObject(payload)
         require(root.optInt("schemaVersion", 1) == 1) { "Jadval formati qo'llab-quvvatlanmaydi" }
-        require(root.optString("cityId").isNotBlank()) { "Jadvalda cityId yo'q" }
+        require(root.optString("cityId") == "baliqchi") { "Faqat Baliqchi tumani jadvali qabul qilinadi" }
+        require(root.optString("source").contains("Telegram rasmi")) { "Jadval manbasi Telegram rasmi emas" }
+        require(root.optString("sourcePostId").isNotBlank()) { "Telegram post ID mavjud emas" }
         val days = root.optJSONArray("days") ?: throw IllegalArgumentException("Jadvalda days ro'yxati yo'q")
-        require(days.length() in 1..10) { "Jadvaldagi kunlar soni noto'g'ri" }
+        require(days.length() == 7) { "Telegram jadvali aynan 7 kun bo'lishi kerak" }
+        val prayerKeys = listOf("fajr", "dhuhr", "asr", "maghrib", "isha")
+        var previousDate = ""
         for (i in 0 until days.length()) {
             val day = days.getJSONObject(i)
-            require(day.optString("date").matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) { "Sana noto'g'ri" }
-            listOf("fajr", "dhuhr", "asr", "maghrib", "isha").forEach { key ->
+            val date = day.optString("date")
+            require(date.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) { "Sana noto'g'ri" }
+            require(previousDate.isEmpty() || date > previousDate) { "Jadval sanalari tartibi noto'g'ri" }
+            previousDate = date
+            var previousMinutes = -1
+            prayerKeys.forEach { key ->
                 val time = day.optString(key)
-                require(time.matches(Regex("\\d{1,2}:\\d{2}"))) { "$key vaqti noto'g'ri" }
+                require(time.matches(Regex("(?:[01]\\d|2[0-3]):[0-5]\\d"))) { "$key vaqti noto'g'ri" }
+                val minutes = time.substring(0, 2).toInt() * 60 + time.substring(3, 5).toInt()
+                require(minutes > previousMinutes) { "Namoz vaqtlari ketma-ketligi noto'g'ri" }
+                previousMinutes = minutes
             }
         }
 
