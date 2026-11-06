@@ -7,6 +7,8 @@ on:
       - 'telegram_sync/public_channel_sync.py'
       - 'telegram_sync/tests/**'
       - 'app/src/main/assets/index.html'
+      - 'app/src/main/java/uz/namozvaqtlari/app/PrayerSyncWorker.kt'
+      - 'app/src/main/java/uz/namozvaqtlari/app/PrayerSyncManager.kt'
       - '.github/workflows/sync-public-telegram.yml'
   schedule:
     - cron: '17 */3 * * *'
