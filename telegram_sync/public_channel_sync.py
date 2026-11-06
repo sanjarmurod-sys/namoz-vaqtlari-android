@@ -166,7 +166,7 @@ def _ocr_time_boxes(image: Image.Image, psm: int) -> list[dict]:
     for tokens in line_tokens.values():
         tokens.sort(key=lambda item: item["left"])
         line_text = " ".join(item["text"] for item in tokens)
-        matches = list(re.finditer(r"(?<!\\d)([01]?\\d|2[0-3])\\s*[:：٫-]\\s*([0-5]\\d)(?!\\d)", line_text))
+        matches = list(re.finditer(r"(?<!\d)([01]?\d|2[0-3])\s*[:：٫-]\s*([0-5]\d)(?!\d)", line_text))
         if not matches:
             continue
         offsets = []
