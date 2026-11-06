@@ -141,5 +141,40 @@ class PublicChannelParserTests(unittest.TestCase):
         self.assertNotIn("scheduleSource", payload)
 
 
+    def test_ocr_reassembles_time_when_tesseract_splits_tokens(self):
+        tokens = []
+        for row, times in enumerate([
+            ("05:28", "11:55", "15:19", "17:05", "18:21"),
+            ("05:29", "11:55", "15:18", "17:03", "18:20"),
+            ("05:30", "11:55", "15:17", "17:02", "18:19"),
+            ("05:31", "11:55", "15:16", "17:01", "18:19"),
+            ("05:32", "11:55", "15:15", "17:00", "18:18"),
+            ("05:33", "11:55", "15:14", "16:59", "18:17"),
+            ("05:34", "11:55", "15:13", "16:58", "18:16"),
+        ]):
+            x = 10
+            for value in times:
+                for part in (value[:2], ":", value[3:]):
+                    tokens.append((part, x, row * 40 + 5, row + 1))
+                    x += 12
+                x += 16
+        data = {
+            "text": [item[0] for item in tokens],
+            "conf": ["90"] * len(tokens),
+            "left": [item[1] for item in tokens],
+            "top": [item[2] for item in tokens],
+            "width": [10] * len(tokens),
+            "height": [20] * len(tokens),
+            "block_num": [1] * len(tokens),
+            "par_num": [1] * len(tokens),
+            "line_num": [item[3] for item in tokens],
+        }
+        with patch.object(sync.pytesseract, "image_to_data", return_value=data):
+            boxes = sync._ocr_time_boxes(Image.new("L", (1200, 400), "white"), 6)
+        candidate = sync._schedule_candidate(boxes, "row")
+        self.assertIsNotNone(candidate)
+        self.assertTrue(sync._validate_week_matrix(candidate[0]))
+        self.assertEqual(candidate[0][0], ["05:28", "11:55", "15:19", "17:05", "18:21"])
+
 if __name__ == "__main__":
     unittest.main()
