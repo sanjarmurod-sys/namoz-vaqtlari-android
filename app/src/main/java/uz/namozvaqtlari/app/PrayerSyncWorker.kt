@@ -47,7 +47,7 @@ object PrayerSyncRepository {
         val root = JSONObject(payload)
         require(root.optInt("schemaVersion", 1) == 1) { "Jadval formati qo'llab-quvvatlanmaydi" }
         require(root.optString("cityId") == "baliqchi") { "Faqat Baliqchi tumani jadvali qabul qilinadi" }
-        require(root.optString("source").contains("Telegram rasmi")) { "Jadval manbasi Telegram rasmi emas" }
+        require(root.optString("source").startsWith("Telegram rasmi: @namozvaqti365/")) { "Jadval manbasi tasdiqlangan Telegram kanali emas" }
         require(root.optString("sourcePostId").isNotBlank()) { "Telegram post ID mavjud emas" }
         val days = root.optJSONArray("days") ?: throw IllegalArgumentException("Jadvalda days ro'yxati yo'q")
         require(days.length() == 7) { "Telegram jadvali aynan 7 kun bo'lishi kerak" }
@@ -78,8 +78,23 @@ object PrayerSyncRepository {
         return payload
     }
 
-    fun cached(context: Context): String? =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(REMOTE_KEY, null)
+    fun cached(context: Context): String? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val payload = prefs.getString(REMOTE_KEY, null) ?: return null
+        val trusted = try {
+            val root = JSONObject(payload)
+            root.optString("cityId") == "baliqchi" &&
+                root.optString("source").startsWith("Telegram rasmi: @namozvaqti365/") &&
+                root.optJSONArray("days")?.length() == 7
+        } catch (_: Exception) {
+            false
+        }
+        if (!trusted) {
+            prefs.edit().remove(REMOTE_KEY).remove(UPDATED_KEY).apply()
+            return null
+        }
+        return payload
+    }
 
     fun lastUpdated(context: Context): Long =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong(UPDATED_KEY, 0L)
